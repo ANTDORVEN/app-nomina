@@ -14,7 +14,19 @@ export default function ResumenCard({ summary }) {
     );
   }
 
-  const { periodo, estimacionBrutoTotal, totalHorasTrabajadas, totalHorasOrdinarias, totalHorasExtra, totalHorasNocturnas, totalDiasFestivos, desgloseImportes, fichajesContabilizados } = summary;
+  const { 
+    periodo, 
+    estimacionBrutoTotal, 
+    totalHorasTrabajadas, 
+    totalHorasPresenciales,
+    totalHorasDescansoDescontadas,
+    totalHorasOrdinarias, 
+    totalHorasExtra, 
+    totalHorasNocturnas, 
+    totalDiasFestivos, 
+    desgloseImportes, 
+    fichajesContabilizados 
+  } = summary;
 
   return (
     <div className="resumen-card">
@@ -45,15 +57,15 @@ export default function ResumenCard({ summary }) {
           <span className="metric-icon">⏱️</span>
           <div>
             <span className="metric-value">{totalHorasTrabajadas} h</span>
-            <span className="metric-label">Horas Totales</span>
+            <span className="metric-label">Horas Liquidadas</span>
           </div>
         </div>
 
         <div className="metric-item">
-          <span className="metric-icon">💼</span>
+          <span className="metric-icon">🚑</span>
           <div>
-            <span className="metric-value">{totalHorasOrdinarias} h</span>
-            <span className="metric-label">Ordinarias</span>
+            <span className="metric-value">{totalHorasPresenciales} h</span>
+            <span className="metric-label">Presencia Reloj</span>
           </div>
         </div>
 
@@ -79,15 +91,23 @@ export default function ResumenCard({ summary }) {
         <h3 className="desglose-title">💰 Desglose por Conceptos</h3>
         <div className="desglose-list">
           <div className="desglose-row">
-            <span>Horas Presenciales / Ordinarias</span>
+            <span>Horas Presenciales / Ordinarias ({totalHorasOrdinarias}h)</span>
             <span className="concept-amount">+{desgloseImportes.ordinario.toFixed(2)} €</span>
           </div>
+
+          {totalHorasDescansoDescontadas > 0 && (
+            <div className="desglose-row break-discount-row">
+              <span>☕ Descanso no remunerado descontado ({totalHorasDescansoDescontadas}h total en turno 12h)</span>
+              <span className="concept-amount discount">-0.00 €</span>
+            </div>
+          )}
+
           <div className="desglose-row">
-            <span>Horas Extraordinarias</span>
+            <span>Horas Extraordinarias ({totalHorasExtra}h)</span>
             <span className="concept-amount extra">+{desgloseImportes.extra.toFixed(2)} €</span>
           </div>
           <div className="desglose-row">
-            <span>Plus Nocturnidad</span>
+            <span>Plus Nocturnidad ({totalHorasNocturnas}h)</span>
             <span className="concept-amount night">+{desgloseImportes.nocturnidad.toFixed(2)} €</span>
           </div>
           {desgloseImportes.festivos > 0 && (

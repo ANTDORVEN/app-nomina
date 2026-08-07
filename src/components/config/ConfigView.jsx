@@ -4,10 +4,11 @@ import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import './ConfigView.css';
 
 /**
- * ConfigView.jsx - Ajuste de precios de hora, pluses, pagas extra y copia de seguridad (JSON).
+ * ConfigView.jsx - Ajuste de precios de hora, pluses, edición de horarios por turno y backup JSON.
  */
 export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
+  const [shiftTypes, setShiftTypes] = useState(getShiftTypes());
 
   const [precioOrdinaria, setPrecioOrdinaria] = useState(currentConfig.precioHoraOrdinaria);
   const [precioExtra, setPrecioExtra] = useState(currentConfig.precioHoraExtra);
@@ -15,21 +16,37 @@ export default function ConfigView({ onConfigSaved }) {
   const [plusFestivo, setPlusFestivo] = useState(currentConfig.plusFestivoDia);
   const [mensaje, setMensaje] = useState('');
 
+  // Actualizar un campo de horario de un tipo de turno
+  const handleShiftTypeTimeChange = (id, field, value) => {
+    const updated = shiftTypes.map(st => {
+      if (st.id === id) {
+        return { ...st, [field]: value };
+      }
+      return st;
+    });
+    setShiftTypes(updated);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updated = {
+
+    // Guardar precios
+    const updatedConfig = {
       ...currentConfig,
       precioHoraOrdinaria: Number(precioOrdinaria),
       precioHoraExtra: Number(precioExtra),
       plusNocturnidadHora: Number(plusNocturnidad),
       plusFestivoDia: Number(plusFestivo)
     };
+    saveConfig(updatedConfig);
 
-    saveConfig(updated);
-    setMensaje('¡Configuración de precios y pluses actualizada correctamente!');
+    // Guardar horarios por defecto de los turnos (Punto 1 y 2)
+    setStorageItem(STORAGE_KEYS.SHIFT_TYPES, shiftTypes);
+
+    setMensaje('¡Configuración de tarifas y horarios de turnos actualizada!');
     if (onConfigSaved) onConfigSaved();
 
-    setTimeout(() => setMensaje(''), 3000);
+    setTimeout(() => setMensaje(''), 3500);
   };
 
   // Exportar copia de seguridad en JSON
@@ -76,14 +93,16 @@ export default function ConfigView({ onConfigSaved }) {
 
   return (
     <div className="config-container">
-      <h2 className="config-title">⚙️ Configuración Económica & Tarifas</h2>
+      <h2 className="config-title">⚙️ Configuración Económica & Horarios de Turnos</h2>
       <p className="config-subtitle">
-        Ajusta tus precios de hora y pluses según el convenio o cambios contractuales.
+        Personaliza los horarios de tus turnos (ej. Mañana 07:00-15:00) y las horas de descanso no pagadas.
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
       <form onSubmit={handleSubmit} className="config-form">
+        {/* Tarifas de Nómina */}
+        <h3 className="section-subtitle">💶 Tarifas e Importes por Hora</h3>
         <div className="form-row">
           <div className="form-group">
             <label>Precio Hora Ordinaria (€/h):</label>
@@ -132,12 +151,59 @@ export default function ConfigView({ onConfigSaved }) {
           </div>
         </div>
 
+        {/* Horarios por defecto de los turnos (Punto 1 y 2) */}
+        <h3 className="section-subtitle">⏱️ Horarios por Defecto de los Tipos de Turno</h3>
+        <p className="section-desc">Ajusta la hora de inicio y fin de cada turno para adaptarlo a tus horarios reales de servicio.</p>
+
+        <div className="shift-types-editor">
+          {shiftTypes.map(st => (
+            <div key={st.id} className="shift-type-row">
+              <div className="shift-type-name">
+                <span className="color-dot" style={{ backgroundColor: st.color }}></span>
+                <strong>{st.nombre}</strong>
+              </div>
+
+              <div className="shift-type-inputs">
+                <label>
+                  Entrada:
+                  <input 
+                    type="time" 
+                    value={st.horaInicio || '08:00'}
+                    onChange={e => handleShiftTypeTimeChange(st.id, 'horaInicio', e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Salida:
+                  <input 
+                    type="time" 
+                    value={st.horaFin || '16:00'}
+                    onChange={e => handleShiftTypeTimeChange(st.id, 'horaFin', e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Descanso no pagado (h):
+                  <input 
+                    type="number" 
+                    step="0.5"
+                    min="0"
+                    max="5"
+                    value={st.horasDescansoNoPagadas || 0}
+                    onChange={e => handleShiftTypeTimeChange(st.id, 'horasDescansoNoPagadas', Number(e.target.value))}
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <button type="submit" className="save-config-btn">
-          💾 Guardar Nuevas Tarifas
+          💾 Guardar Tarifas y Horarios
         </button>
       </form>
 
-      {/* Sección Copia de Seguridad */}
+      {/* Copias de seguridad */}
       <div className="backup-section">
         <h3 className="backup-title">📦 Copia de Seguridad y Respaldos</h3>
         <p className="backup-desc">

@@ -1,45 +1,55 @@
 /**
  * defaultData.js - Valores por defecto y datos semilla para la aplicación de Nómina TES.
- * 
- * Todo en la app es editable desde la sección de Configuración, pero estos datos
- * sirven como plantilla inicial al arrancar la app por primera vez.
  */
 
 export const DEFAULT_CONFIG = {
   precioHoraOrdinaria: 10.50,  // Euros/hora presencial
   precioHoraExtra: 14.00,      // Euros/hora extra
-  plusNocturnidadHora: 1.85,   // Euros/hora de noche (entre 22:00 y 06:00)
+  plusNocturnidadHora: 1.85,   // Euros/hora de noche
   plusFestivoDia: 35.00,       // Importe adicional por jornada festiva
-  mesesPagasExtra: [6, 12]     // Junio (Verano) y Diciembre (Navidad)
+  mesesPagasExtra: [6, 12]
 };
 
 export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'manana',
     nombre: 'Mañana (M)',
-    horaInicio: '08:00',
-    horaFin: '16:00',
+    horaInicio: '07:00',
+    horaFin: '15:00',
     horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#3b82f6'
   },
   {
     id: 'tarde',
     nombre: 'Tarde (T)',
-    horaInicio: '16:00',
-    horaFin: '00:00',
+    horaInicio: '15:00',
+    horaFin: '23:00',
     horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#f59e0b'
   },
   {
     id: 'noche',
     nombre: 'Noche (N)',
-    horaInicio: '00:00',
-    horaFin: '08:00',
+    horaInicio: '23:00',
+    horaFin: '07:00',
     horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: true,
     color: '#8b5cf6'
+  },
+  {
+    id: 'turno12',
+    nombre: 'Turno 12h (11h Pagadas)',
+    horaInicio: '08:00',
+    horaFin: '20:00',
+    horasTeoricas: 12,
+    horasDescansoNoPagadas: 1, // 1h de descanso no remunerado
+    generaNocturnidad: false,
+    color: '#0284c7'
   },
   {
     id: 'guardia24',
@@ -47,6 +57,7 @@ export const DEFAULT_SHIFT_TYPES = [
     horaInicio: '08:00',
     horaFin: '08:00',
     horasTeoricas: 24,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: true,
     color: '#10b981'
   },
@@ -56,6 +67,7 @@ export const DEFAULT_SHIFT_TYPES = [
     horaInicio: '08:00',
     horaFin: '16:00',
     horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#06b6d4'
   },
@@ -65,15 +77,17 @@ export const DEFAULT_SHIFT_TYPES = [
     horaInicio: '08:00',
     horaFin: '16:00',
     horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#eab308'
   },
   {
     id: 'festivo',
-    nombre: 'Festivo Trabalhado',
+    nombre: 'Festivo Trabajado',
     horaInicio: '08:00',
     horaFin: '16:00',
     horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#ec4899'
   },
@@ -83,6 +97,7 @@ export const DEFAULT_SHIFT_TYPES = [
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#14b8a6'
   },
@@ -92,15 +107,12 @@ export const DEFAULT_SHIFT_TYPES = [
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,
+    horasDescansoNoPagadas: 0,
     generaNocturnidad: false,
     color: '#64748b'
   }
 ];
 
-/**
- * Tabla de periodos de cobro de ATH (Ambulancias Tenorio) de ejemplo para 2026.
- * El usuario puede añadir, modificar o borrar periodos desde la app.
- */
 export const DEFAULT_PAYROLL_PERIODS = [
   {
     id: 'ath_2026_01',

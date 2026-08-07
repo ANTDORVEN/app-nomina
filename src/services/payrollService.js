@@ -1,8 +1,8 @@
 /**
  * payrollService.js - Servicio de cálculo de nómina y acumulación por período de cobro.
  * 
- * Contiene el algoritmo de cálculo de horas ordinarias, horas extra, pluses
- * y la estimación del importe bruto para la nómina del periodo seleccionado.
+ * Descuenta automáticamente la hora de descanso no pagada (ej. Turno 12h con 11h pagadas)
+ * sin alterar la presencia real en el calendario.
  */
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
@@ -11,8 +11,8 @@ import { isDateInPeriod } from '../utils/dateUtils.js';
 /**
  * Calcula el resumen económico y de horas para un período de cobro ATH específico.
  * 
- * @param {object} period - Objeto con { fechaInicio, fechaFin, nombreNomina }
- * @returns {object} Resumen detallado de horas e importes
+ * @param {object} period 
+ * @returns {object}
  */
 export function calculatePayrollForPeriod(period) {
   if (!period) return getEmptyPayrollSummary();
@@ -21,7 +21,6 @@ export function calculatePayrollForPeriod(period) {
   const allLogs = getAllTimeLogs();
   const shiftTypes = getShiftTypes();
 
-  // Filtrar solo los fichajes que caen en las fechas del periodo ATH
   const periodLogs = allLogs.filter(log => 
     isDateInPeriod(log.fecha, period.fechaInicio, period.fechaFin)
   );
@@ -30,20 +29,27 @@ export function calculatePayrollForPeriod(period) {
   let totalHorasExtra = 0;
   let totalHorasNocturnas = 0;
   let totalDiasFestivos = 0;
+  let totalHorasPresenciales = 0;
+  let totalHorasDescansoDescontadas = 0;
 
   periodLogs.forEach(log => {
     const shiftType = shiftTypes.find(t => t.id === log.tipoTurnoId);
     const horasTeoricas = shiftType ? shiftType.horasTeoricas : 8;
+    const descansoNoPagado = log.horasDescansoNoPagadas ?? (shiftType ? (shiftType.horasDescansoNoPagadas || 0) : 0);
 
     const horasReales = Number(log.horasTrabajadas) || 0;
+    totalHorasPresenciales += horasReales;
+    totalHorasDescansoDescontadas += descansoNoPagado;
 
-    // Horas extra: Lo que exceda de las horas teóricas del turno (o si se marca explícitamente en el log)
+    // Horas extra
     let extraLog = Number(log.horasExtra) || 0;
     if (horasReales > horasTeoricas && extraLog === 0) {
       extraLog = horasReales - horasTeoricas;
     }
 
-    const ordinariasLog = Math.max(0, horasReales - extraLog);
+    // Horas remunerables tras restar descanso no pagado
+    const horasPagablesBrutas = Math.max(0, horasReales - descansoNoPagado);
+    const ordinariasLog = Math.max(0, horasPagablesBrutas - extraLog);
 
     totalHorasOrdinarias += ordinariasLog;
     totalHorasExtra += extraLog;
@@ -51,7 +57,6 @@ export function calculatePayrollForPeriod(period) {
     if (log.horasNocturnas) {
       totalHorasNocturnas += Number(log.horasNocturnas);
     } else if (shiftType && shiftType.generaNocturnidad) {
-      // Por defecto en turnos de noche o guardias se estiman horas nocturnas si no se especifica
       totalHorasNocturnas += (shiftType.id === 'noche' ? 8 : (shiftType.id === 'guardia24' ? 8 : 0));
     }
 
@@ -60,7 +65,6 @@ export function calculatePayrollForPeriod(period) {
     }
   });
 
-  // Cálculo de importes monetarios
   const importeOrdinario = totalHorasOrdinarias * config.precioHoraOrdinaria;
   const importeExtra = totalHorasExtra * config.precioHoraExtra;
   const importeNocturnidad = totalHorasNocturnas * config.plusNocturnidadHora;
@@ -71,7 +75,9 @@ export function calculatePayrollForPeriod(period) {
   return {
     periodo: period,
     fichajesContabilizados: periodLogs.length,
-    totalHorasTrabajadas: totalHorasOrdinarias + totalHorasExtra,
+    totalHorasTrabajadas: totalHorasOrdinarias + totalHorasExtra, // Horas abonadas
+    totalHorasPresenciales, // Horas en reloj / presencia real
+    totalHorasDescansoDescontadas,
     totalHorasOrdinarias,
     totalHorasExtra,
     totalHorasNocturnas,
@@ -92,6 +98,8 @@ function getEmptyPayrollSummary() {
     periodo: null,
     fichajesContabilizados: 0,
     totalHorasTrabajadas: 0,
+    totalHorasPresenciales: 0,
+    totalHorasDescansoDescontadas: 0,
     totalHorasOrdinarias: 0,
     totalHorasExtra: 0,
     totalHorasNocturnas: 0,
