@@ -25,8 +25,8 @@ export default function CalendarView({ onCalendarUpdated }) {
   const [showPatternModal, setShowPatternModal] = useState(false);
   const [patternType, setPatternType] = useState('guardia24');
   const [patternStartDate, setPatternStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [patternDurationMode, setPatternDurationMode] = useState('meses');
-  const [patternMonths, setPatternMonths] = useState(6);
+  const [patternDurationMode, setPatternDurationMode] = useState('rango'); // 'meses' o 'rango'
+  const [patternMonths, setPatternMonths] = useState(1);
   const [patternEndDate, setPatternEndDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Opciones específicas para patrones L-V, Fin de semana alterno y Ausencias
@@ -66,7 +66,7 @@ export default function CalendarView({ onCalendarUpdated }) {
       setPatternStartTime('00:00');
       setPatternEndTime('00:00');
     }
-  }, [patternType, lvShiftId]);
+  }, [patternType, lvShiftId, shiftTypes]);
 
   // Actualizar vista previa de borrado
   useEffect(() => {
@@ -254,7 +254,9 @@ export default function CalendarView({ onCalendarUpdated }) {
 
         {daysGrid.map((dayItem, index) => {
           const logForDay = logs.find(l => l.fecha === dayItem.dateIso);
-          const shiftObj = logForDay ? shiftTypes.find(s => s.id === logForDay.tipoTurnoId) : null;
+          const shiftObj = logForDay 
+            ? (shiftTypes.find(s => s.id === logForDay.tipoTurnoId) || { nombre: logForDay.tipoTurnoId, color: '#805ad5' }) 
+            : null;
           const isToday = dayItem.dateIso === new Date().toISOString().split('T')[0];
 
           return (
@@ -347,6 +349,9 @@ export default function CalendarView({ onCalendarUpdated }) {
               </div>
 
               <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setSelectedDay(null)}>
+                  Cancelar
+                </button>
                 <button type="button" className="btn-secondary" onClick={handleDeleteDayShift}>
                   🗑️ Borrar Día
                 </button>
@@ -446,17 +451,17 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <div className="toggle-mode-group">
                   <button 
                     type="button" 
-                    className={`toggle-mode-btn ${patternDurationMode === 'meses' ? 'active' : ''}`}
-                    onClick={() => setPatternDurationMode('meses')}
-                  >
-                    📅 Bloque por Meses
-                  </button>
-                  <button 
-                    type="button" 
                     className={`toggle-mode-btn ${patternDurationMode === 'rango' ? 'active' : ''}`}
                     onClick={() => setPatternDurationMode('rango')}
                   >
                     📆 Rango Personalizado
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`toggle-mode-btn ${patternDurationMode === 'meses' ? 'active' : ''}`}
+                    onClick={() => setPatternDurationMode('meses')}
+                  >
+                    📅 Bloque por Meses
                   </button>
                 </div>
               </div>

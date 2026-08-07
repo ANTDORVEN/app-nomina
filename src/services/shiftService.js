@@ -1,13 +1,10 @@
 /**
  * shiftService.js - Servicio de gestión de turnos, fichajes diarios y periodos ATH.
- * 
- * Este servicio contiene la lógica de negocio para crear, leer, actualizar y eliminar (CRUD)
- * los registros de trabajo de un TES y sus tipos de turno.
  */
 
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from './storageService.js';
 import { DEFAULT_CONFIG, DEFAULT_SHIFT_TYPES, DEFAULT_PAYROLL_PERIODS } from '../models/defaultData.js';
-import { isDateInPeriod, formatDateToISO } from '../utils/dateUtils.js';
+import { isDateInPeriod } from '../utils/dateUtils.js';
 
 /**
  * Inicializa el almacenamiento con datos por defecto si es la primera vez que se abre la app
@@ -43,11 +40,28 @@ export function saveConfig(newConfig) {
 }
 
 /**
- * Obtiene la lista de tipos de turnos (Mañana, Tarde, Noche, Guardia 24h, etc.)
+ * Obtiene la lista de tipos de turnos (Mañana, Tarde, Noche, Guardia 24h, Bajas, etc.)
+ * Fusiona automáticamente nuevos tipos añadidos al sistema si no existen aún en localStorage.
  */
 export function getShiftTypes() {
   initializeDefaultData();
-  return getStorageItem(STORAGE_KEYS.SHIFT_TYPES, DEFAULT_SHIFT_TYPES);
+  const stored = getStorageItem(STORAGE_KEYS.SHIFT_TYPES, DEFAULT_SHIFT_TYPES);
+
+  let needsUpdate = false;
+  const merged = [...stored];
+
+  DEFAULT_SHIFT_TYPES.forEach(defType => {
+    if (!merged.some(st => st.id === defType.id)) {
+      merged.push(defType);
+      needsUpdate = true;
+    }
+  });
+
+  if (needsUpdate) {
+    setStorageItem(STORAGE_KEYS.SHIFT_TYPES, merged);
+  }
+
+  return merged;
 }
 
 /**
@@ -60,8 +74,6 @@ export function getPayrollPeriods() {
 
 /**
  * Encuentra el periodo de cobro correspondiente para una fecha dada (YYYY-MM-DD)
- * @param {string} dateString 
- * @returns {object|null} El objeto periodo ATH o null si no se encuentra
  */
 export function getPeriodForDate(dateString) {
   const periods = getPayrollPeriods();
@@ -78,7 +90,6 @@ export function getAllTimeLogs() {
 
 /**
  * Guarda o actualiza un fichaje diario
- * @param {object} logData 
  */
 export function saveTimeLog(logData) {
   const logs = getAllTimeLogs();
@@ -94,16 +105,13 @@ export function saveTimeLog(logData) {
     });
   }
 
-  // Ordenar por fecha descendente
   logs.sort((a, b) => b.fecha.localeCompare(a.fecha));
-
   setStorageItem(STORAGE_KEYS.TIME_LOGS, logs);
   return logs;
 }
 
 /**
  * Elimina un fichaje por fecha o id
- * @param {string} logId 
  */
 export function deleteTimeLog(logId) {
   const logs = getAllTimeLogs().filter(l => l.id !== logId && l.fecha !== logId);
