@@ -109,12 +109,9 @@ export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaF
 /**
  * Genera patrón de Fin de Semana Alterno (Sábado o Domingo) con HORARIO PERSONALIZADO
  * 
- * @param {string} primerDiaFecha - Fecha 'YYYY-MM-DD' del primer sábado o domingo
- * @param {number|null} numeroMeses 
- * @param {string|null} fechaFinCustom 
- * @param {string} diaSemanaElegido - 'sabado' o 'domingo'
- * @param {string} horaInicio - Ej: '07:30'
- * @param {string} horaSalida - Ej: '19:30'
+ * CORRECCIÓN DE BUG:
+ * Garantiza que currDate se desplace siempre al primer SÁBADO (día 6) o DOMINGO (día 0)
+ * correspondiente, evitando que un inicio en Lunes desplace las asignaciones a la columna incorrecta.
  */
 export function generateFinDeSemanaAlternoPattern(primerDiaFecha, numeroMeses = 6, fechaFinCustom = null, diaSemanaElegido = 'sabado', horaInicio = '08:00', horaSalida = '16:00') {
   if (!primerDiaFecha) return;
@@ -127,6 +124,12 @@ export function generateFinDeSemanaAlternoPattern(primerDiaFecha, numeroMeses = 
   } else {
     endDate = new Date(currDate);
     endDate.setMonth(endDate.getMonth() + (numeroMeses || 6));
+  }
+
+  // Corregir desfase de día de la semana: 6 = Sábado, 0 = Domingo
+  const targetDayOfWeek = diaSemanaElegido === 'sabado' ? 6 : 0;
+  while (currDate.getDay() !== targetDayOfWeek) {
+    currDate.setDate(currDate.getDate() + 1);
   }
 
   const horasCalc = calculateWorkedHours(horaInicio, horaSalida);
