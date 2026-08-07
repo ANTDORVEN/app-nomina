@@ -3,15 +3,16 @@
  */
 
 export const DEFAULT_CONFIG = {
-  precioHoraOrdinaria: 12.36,     // Precio hora presencia Convenio Sevilla 2025
-  precioHoraExtra: 21.63,         // Precio hora extra
+  precioHoraOrdinaria: 12.36,     // Precio hora presencial de exceso (€/h)
+  precioHoraExtra: 21.63,         // Precio hora extra (€/h)
+  precioHoraFestiva: 21.00,       // Precio hora en días festivos (€/h)
   salarioBaseMensual: 1253.26,    // Salario base mensual
   plusConvenio: 167.52,           // Plus convenio mensual
   antiguedadMensual: 62.66,       // Complemento de antigüedad (5 años)
   prorrateoPagasExtra: 247.24,    // Pagas extra prorrateadas mensualmente
   fechaIngresoEmpresa: '2021-11-01', // Fecha de ingreso para recálculo de antigüedad
   plusNocturnidadHora: 1.85,      // Euros/hora de noche
-  plusFestivoDia: 35.00,          // Importe adicional por jornada festiva
+  plusFestivoDia: 0,              // Plus diario suplementario (opcional)
   mesesPagasExtra: [6, 12]
 };
 
@@ -101,6 +102,7 @@ export const DEFAULT_SHIFT_TYPES = [
     horaFin: '16:00',
     horasTeoricas: 8,
     horasDescansoNoPagadas: 0,
+    esFestivo: true,
     generaNocturnidad: false,
     color: '#ec4899'
   },

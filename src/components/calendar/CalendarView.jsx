@@ -6,7 +6,7 @@ import { formatDateSpanish, calculateWorkedHours } from '../../utils/dateUtils.j
 import './CalendarView.css';
 
 /**
- * CalendarView.jsx - Vista de cuadrante con etiquetas abreviadas compactas para móvil y tooltip completo.
+ * CalendarView.jsx - Vista de cuadrante con solución al bug del horario en generador de patrones y responsive móvil.
  */
 export default function CalendarView({ onCalendarUpdated }) {
   const today = new Date();
@@ -48,25 +48,38 @@ export default function CalendarView({ onCalendarUpdated }) {
   const logs = getAllTimeLogs();
   const shiftTypes = getShiftTypes();
 
-  // Sugerir horarios según el patrón
-  useEffect(() => {
-    if (patternType === 'guardia24') {
+  // Cambio de tipo de patrón -> Sugerir horarios iniciales solo al cambiar el select
+  const handlePatternCategoryChange = (e) => {
+    const pType = e.target.value;
+    setPatternType(pType);
+
+    if (pType === 'guardia24') {
       const gShift = shiftTypes.find(s => s.id === 'guardia24');
       setPatternStartTime(gShift ? gShift.horaInicio : '08:00');
       setPatternEndTime(gShift ? gShift.horaFin : '08:00');
-    } else if (patternType === 'lunes_viernes') {
+    } else if (pType === 'lunes_viernes') {
       const sObj = shiftTypes.find(s => s.id === lvShiftId);
       setPatternStartTime(sObj ? sObj.horaInicio : '07:00');
       setPatternEndTime(sObj ? sObj.horaFin : '15:00');
-    } else if (patternType === 'fin_semana_alterno') {
+    } else if (pType === 'fin_semana_alterno') {
       const sabShift = shiftTypes.find(s => s.id === 'sabado_alterno');
       setPatternStartTime(sabShift ? sabShift.horaInicio : '08:00');
       setPatternEndTime(sabShift ? sabShift.horaFin : '16:00');
-    } else if (patternType === 'ausencias') {
+    } else if (pType === 'ausencias') {
       setPatternStartTime('00:00');
       setPatternEndTime('00:00');
     }
-  }, [patternType, lvShiftId, shiftTypes]);
+  };
+
+  const handleLvShiftChange = (e) => {
+    const sId = e.target.value;
+    setLvShiftId(sId);
+    const sObj = shiftTypes.find(s => s.id === sId);
+    if (sObj) {
+      setPatternStartTime(sObj.horaInicio);
+      setPatternEndTime(sObj.horaFin);
+    }
+  };
 
   // Actualizar vista previa de borrado
   useEffect(() => {
@@ -165,7 +178,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     if (onCalendarUpdated) onCalendarUpdated();
   };
 
-  // Ejecutar generador de patrones (Turnos o Ausencias)
+  // Ejecutar generador de patrones (Turnos o Ausencias) con horarios personalizados respetados
   const handleRunPatternGenerator = (e) => {
     e.preventDefault();
 
@@ -382,7 +395,7 @@ export default function CalendarView({ onCalendarUpdated }) {
             <form onSubmit={handleRunPatternGenerator} className="modal-form">
               <div className="form-group">
                 <label>Categoría de Patrón:</label>
-                <select value={patternType} onChange={e => setPatternType(e.target.value)}>
+                <select value={patternType} onChange={handlePatternCategoryChange}>
                   <option value="guardia24">Guardia 24h + 3 Días de Descanso (Rotativo 24/72)</option>
                   <option value="lunes_viernes">Turno Lunes a Viernes Fijo (Mañana / Tarde / Noche)</option>
                   <option value="fin_semana_alterno">Fin de Semana Alterno (Horario Personalizado)</option>
@@ -407,7 +420,7 @@ export default function CalendarView({ onCalendarUpdated }) {
               {patternType === 'lunes_viernes' && (
                 <div className="form-group">
                   <label>Selecciona el turno de Lunes a Viernes:</label>
-                  <select value={lvShiftId} onChange={e => setLvShiftId(e.target.value)}>
+                  <select value={lvShiftId} onChange={handleLvShiftChange}>
                     <option value="manana">Mañana (M)</option>
                     <option value="tarde">Tarde (T)</option>
                     <option value="noche">Noche (N)</option>

@@ -4,17 +4,17 @@ import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import './ConfigView.css';
 
 /**
- * ConfigView.jsx - Ajuste de precios de hora, pluses, conceptos fijos del convenio, horarios de turnos y backup JSON.
+ * ConfigView.jsx - Ajuste de precios de hora presencial, festiva, extra, pluses, conceptos fijos del convenio y backups.
  */
 export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
   const [shiftTypes, setShiftTypes] = useState(getShiftTypes());
 
   // Tarifas Variables
-  const [precioOrdinaria, setPrecioOrdinaria] = useState(currentConfig.precioHoraOrdinaria);
-  const [precioExtra, setPrecioExtra] = useState(currentConfig.precioHoraExtra);
-  const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora);
-  const [plusFestivo, setPlusFestivo] = useState(currentConfig.plusFestivoDia);
+  const [precioOrdinaria, setPrecioOrdinaria] = useState(currentConfig.precioHoraOrdinaria || 12.36);
+  const [precioFestiva, setPrecioFestiva] = useState(currentConfig.precioHoraFestiva || 21.00);
+  const [precioExtra, setPrecioExtra] = useState(currentConfig.precioHoraExtra || 21.63);
+  const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora || 1.85);
 
   // Conceptos Fijos Mensuales (Convenio Sevilla 2025)
   const [salarioBase, setSalarioBase] = useState(currentConfig.salarioBaseMensual || 1253.26);
@@ -41,9 +41,9 @@ export default function ConfigView({ onConfigSaved }) {
     const updatedConfig = {
       ...currentConfig,
       precioHoraOrdinaria: Number(precioOrdinaria),
+      precioHoraFestiva: Number(precioFestiva),
       precioHoraExtra: Number(precioExtra),
       plusNocturnidadHora: Number(plusNocturnidad),
-      plusFestivoDia: Number(plusFestivo),
       salarioBaseMensual: Number(salarioBase),
       plusConvenio: Number(plusConvenio),
       antiguedadMensual: Number(antiguedad),
@@ -106,7 +106,7 @@ export default function ConfigView({ onConfigSaved }) {
     <div className="config-container">
       <h2 className="config-title">⚙️ Configuración Económica & Convenio</h2>
       <p className="config-subtitle">
-        Ajusta tus conceptos fijos del Convenio de Sevilla 2025, la antigüedad y las tarifas de hora.
+        Ajusta tus conceptos fijos del Convenio de Sevilla 2025, la antigüedad y las tarifas de hora presencial y festivos.
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
@@ -180,7 +180,7 @@ export default function ConfigView({ onConfigSaved }) {
         
         <div className="form-row">
           <div className="form-group">
-            <label>Precio Hora Presencia (€/h):</label>
+            <label>Precio Hora Presencial / Exceso (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -191,6 +191,19 @@ export default function ConfigView({ onConfigSaved }) {
           </div>
 
           <div className="form-group">
+            <label>Precio Hora Festiva (€/h):</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={precioFestiva} 
+              onChange={e => setPrecioFestiva(e.target.value)} 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
             <label>Precio Hora Extra (€/h):</label>
             <input 
               type="number" 
@@ -200,9 +213,7 @@ export default function ConfigView({ onConfigSaved }) {
               required 
             />
           </div>
-        </div>
 
-        <div className="form-row">
           <div className="form-group">
             <label>Plus Nocturnidad (€/h noche):</label>
             <input 
@@ -210,17 +221,6 @@ export default function ConfigView({ onConfigSaved }) {
               step="0.01" 
               value={plusNocturnidad} 
               onChange={e => setPlusNocturnidad(e.target.value)} 
-              required 
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Plus Festivo (€/día festivo):</label>
-            <input 
-              type="number" 
-              step="0.01" 
-              value={plusFestivo} 
-              onChange={e => setPlusFestivo(e.target.value)} 
               required 
             />
           </div>

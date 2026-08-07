@@ -3,7 +3,7 @@ import { formatDateSpanish } from '../../utils/dateUtils.js';
 import './ResumenCard.css';
 
 /**
- * ResumenCard.jsx - Tarjeta estilo panel financiero con la estimación de nómina Convenio Sevilla 2025.
+ * ResumenCard.jsx - Tarjeta estilo panel financiero ajustada al modelo real del Convenio de Sevilla 2025.
  */
 export default function ResumenCard({ summary }) {
   if (!summary || !summary.periodo) {
@@ -20,14 +20,21 @@ export default function ResumenCard({ summary }) {
     totalHorasTrabajadas, 
     totalHorasPresenciales,
     totalHorasDescansoDescontadas,
-    totalHorasOrdinarias, 
+    totalHorasPresencialesExceso, 
+    totalHorasFestivas, 
     totalHorasExtra, 
     totalHorasNocturnas, 
     totalDiasFestivos, 
     conceptosFijos,
+    tarifasAplicadas,
     desgloseImportes, 
     fichajesContabilizados 
   } = summary;
+
+  const precioPresencial = tarifasAplicadas ? tarifasAplicadas.precioHoraPresencial : 12.36;
+  const precioFestiva = tarifasAplicadas ? tarifasAplicadas.precioHoraFestiva : 21.00;
+  const precioExtra = tarifasAplicadas ? tarifasAplicadas.precioHoraExtra : 21.63;
+  const precioNocturna = tarifasAplicadas ? tarifasAplicadas.plusNocturnidad : 1.85;
 
   return (
     <div className="resumen-card">
@@ -49,7 +56,7 @@ export default function ResumenCard({ summary }) {
         <div className="bruto-amount">
           {estimacionBrutoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
         </div>
-        <span className="bruto-subtext">*Incluye fijos mensuales (1.730,68 €) + variables por horas y pluses</span>
+        <span className="bruto-subtext">*Suma de Salario Base Fijo (1.730,68 €) + excesos presenciales, festivos y nocturnidad</span>
       </div>
 
       {/* Rejilla de Indicadores de Horas */}
@@ -71,10 +78,10 @@ export default function ResumenCard({ summary }) {
         </div>
 
         <div className="metric-item highlight-extra">
-          <span className="metric-icon">🚀</span>
+          <span className="metric-icon">➕</span>
           <div>
-            <span className="metric-value">{totalHorasExtra} h</span>
-            <span className="metric-label">Horas Extra</span>
+            <span className="metric-value">{totalHorasPresencialesExceso} h</span>
+            <span className="metric-label">Exceso Presencial</span>
           </div>
         </div>
 
@@ -89,7 +96,7 @@ export default function ResumenCard({ summary }) {
 
       {/* Desglose Económico Completo */}
       <div className="desglose-section">
-        <h3 className="desglose-title">🏛️ Conceptos Fijos Mensuales</h3>
+        <h3 className="desglose-title">🏛️ 1. Salario Base Fijo Mensual (Jornada Estándar)</h3>
         <div className="desglose-list">
           <div className="desglose-row">
             <span>Salario Base Mensual</span>
@@ -108,37 +115,43 @@ export default function ResumenCard({ summary }) {
             <span className="concept-amount">+{conceptosFijos ? conceptosFijos.prorrateoPagas.toFixed(2) : '247.24'} €</span>
           </div>
           <div className="desglose-row subtotal-row">
-            <strong>Subtotal Fijo Mensual</strong>
+            <strong>Total Fijo Mensual Garantizado</strong>
             <strong className="concept-amount highlight">+{conceptosFijos ? conceptosFijos.totalFijoMensual.toFixed(2) : '1730.68'} €</strong>
           </div>
         </div>
 
-        <h3 className="desglose-title" style={{ marginTop: '16px' }}>💰 Variables por Horas & Pluses</h3>
+        <h3 className="desglose-title" style={{ marginTop: '16px' }}>💰 2. Variables por Excesos de Jornada, Sábados & Festivos</h3>
         <div className="desglose-list">
           <div className="desglose-row">
-            <span>Horas Presenciales ({totalHorasOrdinarias}h @ 12.36€)</span>
-            <span className="concept-amount">+{desgloseImportes.ordinario.toFixed(2)} €</span>
+            <span>Horas Presenciales de Exceso / Sábados ({totalHorasPresencialesExceso}h @ {precioPresencial.toFixed(2)}€/h)</span>
+            <span className="concept-amount">+{desgloseImportes.presencialExceso.toFixed(2)} €</span>
           </div>
 
-          {totalHorasDescansoDescontadas > 0 && (
-            <div className="desglose-row break-discount-row">
-              <span>☕ Descanso no remunerado ({totalHorasDescansoDescontadas}h total en turno 12h)</span>
-              <span className="concept-amount discount">-0.00 €</span>
+          {totalHorasFestivas > 0 && (
+            <div className="desglose-row">
+              <span>Horas en Días Festivos ({totalHorasFestivas}h @ {precioFestiva.toFixed(2)}€/h)</span>
+              <span className="concept-amount holiday">+{desgloseImportes.festivos.toFixed(2)} €</span>
             </div>
           )}
 
-          <div className="desglose-row">
-            <span>Horas Extraordinarias ({totalHorasExtra}h @ 21.63€)</span>
-            <span className="concept-amount extra">+{desgloseImportes.extra.toFixed(2)} €</span>
-          </div>
-          <div className="desglose-row">
-            <span>Plus Nocturnidad ({totalHorasNocturnas}h @ 1.85€)</span>
-            <span className="concept-amount night">+{desgloseImportes.nocturnidad.toFixed(2)} €</span>
-          </div>
-          {desgloseImportes.festivos > 0 && (
+          {totalHorasExtra > 0 && (
             <div className="desglose-row">
-              <span>Plus Festivos ({totalDiasFestivos} días @ 35.00€)</span>
-              <span className="concept-amount holiday">+{desgloseImportes.festivos.toFixed(2)} €</span>
+              <span>Horas Extraordinarias ({totalHorasExtra}h @ {precioExtra.toFixed(2)}€/h)</span>
+              <span className="concept-amount extra">+{desgloseImportes.extra.toFixed(2)} €</span>
+            </div>
+          )}
+
+          {totalHorasNocturnas > 0 && (
+            <div className="desglose-row">
+              <span>Plus Nocturnidad ({totalHorasNocturnas}h @ {precioNocturna.toFixed(2)}€/h)</span>
+              <span className="concept-amount night">+{desgloseImportes.nocturnidad.toFixed(2)} €</span>
+            </div>
+          )}
+
+          {totalHorasDescansoDescontadas > 0 && (
+            <div className="desglose-row break-discount-row">
+              <span>☕ Descanso no remunerado ({totalHorasDescansoDescontadas}h total en turnos 12h)</span>
+              <span className="concept-amount discount">-0.00 € (No abonable)</span>
             </div>
           )}
         </div>
