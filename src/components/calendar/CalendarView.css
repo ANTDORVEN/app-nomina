@@ -270,6 +270,34 @@
   cursor: not-allowed;
 }
 
+.toggle-mode-group {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-app);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.toggle-mode-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-mode-btn.active {
+  background: var(--primary-600);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

@@ -6,7 +6,7 @@ import { formatDateSpanish } from '../../utils/dateUtils.js';
 import './CalendarView.css';
 
 /**
- * CalendarView.jsx - Vista de cuadrante interactivo con generador y borrador de cadencias por rango.
+ * CalendarView.jsx - Vista de cuadrante interactivo con generador (meses o rango personalizado) y borrador de cadencias.
  */
 export default function CalendarView({ onCalendarUpdated }) {
   const today = new Date();
@@ -23,7 +23,9 @@ export default function CalendarView({ onCalendarUpdated }) {
   const [showPatternModal, setShowPatternModal] = useState(false);
   const [patternType, setPatternType] = useState('guardia24');
   const [patternStartDate, setPatternStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [patternDurationMode, setPatternDurationMode] = useState('meses'); // 'meses' o 'rango'
   const [patternMonths, setPatternMonths] = useState(6);
+  const [patternEndDate, setPatternEndDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Estado para modal de BORRADO de patrones por rango
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -35,7 +37,7 @@ export default function CalendarView({ onCalendarUpdated }) {
   const logs = getAllTimeLogs();
   const shiftTypes = getShiftTypes();
 
-  // Actualizar vista previa cuando cambien las fechas de borrado o el switch
+  // Actualizar vista previa de borrado cuando cambien fechas o switch
   useEffect(() => {
     if (showDeleteModal && deleteStartDate && deleteEndDate) {
       const info = previewDeletePatternInRange(deleteStartDate, deleteEndDate, deleteOnlyAuto);
@@ -103,7 +105,7 @@ export default function CalendarView({ onCalendarUpdated }) {
       horasTrabajadas: horasTeoricas,
       horasExtra: 0,
       esFestivo: modalShiftId === 'festivo',
-      esPatronAuto: false, // Fichaje manual
+      esPatronAuto: false,
       notas: notasFinales,
       companeroIntercambio: modalCompanero.trim()
     });
@@ -119,14 +121,19 @@ export default function CalendarView({ onCalendarUpdated }) {
     if (onCalendarUpdated) onCalendarUpdated();
   };
 
-  // Ejecutar generador de patrones
+  // Ejecutar generador de patrones (Modo meses o Modo rango personalizado)
   const handleRunPatternGenerator = (e) => {
     e.preventDefault();
+
+    const customEndDate = patternDurationMode === 'rango' ? patternEndDate : null;
+    const months = patternDurationMode === 'meses' ? Number(patternMonths) : null;
+
     if (patternType === 'guardia24') {
-      generateGuardias24hPattern(patternStartDate, Number(patternMonths));
+      generateGuardias24hPattern(patternStartDate, months, customEndDate);
     } else if (patternType === 'sabado_alterno') {
-      generateSabadosAlternosPattern(patternStartDate, Number(patternMonths));
+      generateSabadosAlternosPattern(patternStartDate, months, customEndDate);
     }
+
     setShowPatternModal(false);
     if (onCalendarUpdated) onCalendarUpdated();
   };
@@ -281,7 +288,7 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       )}
 
-      {/* MODAL 2: Generador de Patrones */}
+      {/* MODAL 2: Generador de Patrones (Soporta Meses o Rango Personalizado) */}
       {showPatternModal && (
         <div className="modal-backdrop" onClick={() => setShowPatternModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -292,15 +299,37 @@ export default function CalendarView({ onCalendarUpdated }) {
 
             <form onSubmit={handleRunPatternGenerator} className="modal-form">
               <div className="form-group">
-                <label>Selecciona el tipo de patrón rotativo:</label>
+                <label>Tipo de patrón rotativo:</label>
                 <select value={patternType} onChange={e => setPatternType(e.target.value)}>
                   <option value="guardia24">Guardia 24h + 3 Días de Descanso (Rotativo 24/72)</option>
                   <option value="sabado_alterno">Sábados Alternos (1 Sábado Sí / 1 Sábado No)</option>
                 </select>
               </div>
 
+              {/* Selector de Modo de Duración: Meses o Rango Personalizado */}
               <div className="form-group">
-                <label>Fecha de la primera guardia o sábado a trabajar:</label>
+                <label>Modo de Proyección:</label>
+                <div className="toggle-mode-group">
+                  <button 
+                    type="button" 
+                    className={`toggle-mode-btn ${patternDurationMode === 'meses' ? 'active' : ''}`}
+                    onClick={() => setPatternDurationMode('meses')}
+                  >
+                    📅 Bloque por Meses
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`toggle-mode-btn ${patternDurationMode === 'rango' ? 'active' : ''}`}
+                    onClick={() => setPatternDurationMode('rango')}
+                  >
+                    📆 Rango Personalizado
+                  </button>
+                </div>
+              </div>
+
+              {/* Campos para Fecha Inicio */}
+              <div className="form-group">
+                <label>Fecha Inicio (Primera guardia / Sábado):</label>
                 <input 
                   type="date" 
                   value={patternStartDate}
@@ -309,14 +338,28 @@ export default function CalendarView({ onCalendarUpdated }) {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Proyectar a cuántos meses vista:</label>
-                <select value={patternMonths} onChange={e => setPatternMonths(e.target.value)}>
-                  <option value={3}>3 Meses</option>
-                  <option value={6}>6 Meses (Recomendado)</option>
-                  <option value={12}>1 Año Completo</option>
-                </select>
-              </div>
+              {/* Si es por MESES */}
+              {patternDurationMode === 'meses' ? (
+                <div className="form-group">
+                  <label>Proyectar a cuántos meses vista:</label>
+                  <select value={patternMonths} onChange={e => setPatternMonths(e.target.value)}>
+                    <option value={3}>3 Meses</option>
+                    <option value={6}>6 Meses (Recomendado)</option>
+                    <option value={12}>1 Año Completo</option>
+                  </select>
+                </div>
+              ) : (
+                /* Si es RANGO PERSONALIZADO */
+                <div className="form-group">
+                  <label>Fecha Fin del Patrón:</label>
+                  <input 
+                    type="date" 
+                    value={patternEndDate}
+                    onChange={e => setPatternEndDate(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
 
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowPatternModal(false)}>
@@ -331,7 +374,7 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       )}
 
-      {/* MODAL 3: Borrar Cadencia por Rango con Vista Previa */}
+      {/* MODAL 3: Borrar Cadencia por Rango */}
       {showDeleteModal && (
         <div className="modal-backdrop" onClick={() => setShowDeleteModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -378,7 +421,6 @@ export default function CalendarView({ onCalendarUpdated }) {
                 </label>
               </div>
 
-              {/* Vista Previa de Impacto */}
               {previewInfo && (
                 <div className="preview-impact-box">
                   📊 <strong>Resumen de turnos a eliminar:</strong>
