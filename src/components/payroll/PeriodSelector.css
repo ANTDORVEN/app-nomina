@@ -1,0 +1,29 @@
+.period-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.period-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.period-dropdown {
+  background: var(--bg-card);
+  border: 1px solid var(--primary-500);
+  color: var(--text-main);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+}
+
+.period-dropdown:focus {
+  box-shadow: var(--shadow-glow);
+}

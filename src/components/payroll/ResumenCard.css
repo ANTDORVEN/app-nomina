@@ -1,0 +1,159 @@
+.resumen-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.resumen-card.empty {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+}
+
+.resumen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.resumen-period-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.resumen-period-dates {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.fichajes-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--primary-100);
+}
+
+.bruto-box {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(67, 56, 202, 0.25));
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-glow);
+}
+
+.bruto-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-100);
+  letter-spacing: 1px;
+}
+
+.bruto-amount {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 6px 0;
+}
+
+.bruto-subtext {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 500px) {
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.metric-item {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.metric-icon {
+  font-size: 1.3rem;
+}
+
+.metric-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.highlight-extra .metric-value {
+  color: var(--danger-500);
+}
+
+.highlight-noche .metric-value {
+  color: var(--badge-noche);
+}
+
+.desglose-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.desglose-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-main);
+}
+
+.desglose-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.desglose-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.concept-amount {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.concept-amount.extra {
+  color: var(--danger-500);
+}
+
+.concept-amount.night {
+  color: var(--badge-noche);
+}
+
+.concept-amount.holiday {
+  color: var(--badge-festivo);
+}
