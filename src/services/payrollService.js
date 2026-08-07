@@ -1,12 +1,15 @@
 /**
- * payrollService.js - Servicio de cálculo de nómina ajustado al modelo real del Convenio de Sevilla 2025.
+ * payrollService.js - Servicio de cálculo de nómina adaptado al desglose real de Ambulancias Tenorio (ATH).
  * 
- * Modelo Económico:
- * 1. Salario Base Fijo Mensual (1.730,68 € / mes) cubre la jornada estándar contratada.
- * 2. Excesos sobre la jornada diaria (ej. 9h en vez de 8h) o sábados presenciales se pagan a precio de HORA PRESENCIAL (~12,36 €/h).
- * 3. Horas trabajadas en Días Festivos se pagan a precio de HORA FESTIVA (~21,00 €/h).
- * 4. Horas Extra puras marcadas explícitamente se pagan a PRECIO HORA EXTRA (~21,63 €/h).
- * 5. Plus Nocturnidad por horas de noche (~1,85 €/h).
+ * Conceptos del Desglose ATH:
+ * - Salario Base: días liquidados del periodo × precio/día (ej: 18 días × 41,78€/día)
+ * - Plus Convenio: días liquidados del periodo × precio/día (ej: 18 días × 5,58€/día)
+ * - Prorrata Paga Extra: días liquidados del periodo × precio/día (ej: 18 días × 8,24€/día)
+ * - Antigüedad: importe fijo del tramo actual (37,60€ para 5 años)
+ * - J.Complement (Jornada Complementaria): horas presenciales de exceso × 12,36€/hora
+ * - Plus Festivo: horas en días festivos × 21,00€/hora
+ * - Plus Nocturnidad: horas nocturnas × 1,85€/hora
+ * - Horas Extraordinarias: horas extra puras × 21,63€/hora
  */
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
@@ -22,6 +25,9 @@ export function calculatePayrollForPeriod(period) {
   const periodLogs = allLogs.filter(log => 
     isDateInPeriod(log.fecha, period.fechaInicio, period.fechaFin)
   );
+
+  // Días únicos contabilizados en el periodo
+  const diasLiquidables = new Set(periodLogs.map(l => l.fecha)).size;
 
   let totalHorasPresenciales = 0;
   let totalHorasDescansoDescontadas = 0;
@@ -50,11 +56,11 @@ export function calculatePayrollForPeriod(period) {
       totalHorasFestivas += horasLiquidadasDia;
       totalDiasFestivos += 1;
     } else if (isSaturdayDay || log.tipoTurnoId === 'turno12') {
-      // Sábados / Turnos 12h: horas presenciales adicionales a tarifa presencial (12,36 €/h)
+      // Sábados / Turnos 12h: horas presenciales adicionales a tarifa J.Complement (12,36 €/h)
       totalHorasPresencialesExceso += horasLiquidadasDia;
     } else {
-      // Turno regular (L-V): las primeras 8h están cubiertas por los 1.730,68€ fijos.
-      // Si trabaja 9h en vez de 8h, esa 1h de exceso se paga a tarifa presencial (12,36 €/h).
+      // Turno regular (L-V): las primeras 8h están cubiertas por los conceptos por día.
+      // Si trabaja 9h en vez de 8h, esa 1h de exceso es J.Complement (12,36 €/h).
       const excesoDia = Math.max(0, horasLiquidadasDia - 8);
       totalHorasPresencialesExceso += excesoDia;
     }
@@ -72,30 +78,40 @@ export function calculatePayrollForPeriod(period) {
     }
   });
 
-  // Conceptos fijos mensuales del convenio
-  const salarioBase = Number(config.salarioBaseMensual) || 1253.26;
-  const plusConvenio = Number(config.plusConvenio) || 167.52;
-  const antiguedad = Number(config.antiguedadMensual) || 62.66;
-  const prorrateoPagas = Number(config.prorrateoPagasExtra) || 247.24;
-  const totalFijoMensual = salarioBase + plusConvenio + antiguedad + prorrateoPagas;
+  // Precios por día
+  const precioSalarioBaseDia = Number(config.precioSalarioBaseDia) || 41.78;
+  const precioPlusConvenioDia = Number(config.precioPlusConvenioDia) || 5.58;
+  const precioProrrataPagaExtraDia = Number(config.precioProrrataPagaExtraDia) || 8.24;
 
-  // Tarifas por hora configurables
-  const precioHoraPresencial = Number(config.precioHoraOrdinaria) || 12.36;
+  // Antigüedad fija por tramo
+  const antiguedadMensual = Number(config.antiguedadMensual) || 37.60;
+
+  // Tarifas por hora
+  const precioHoraOrdinaria = Number(config.precioHoraOrdinaria) || 12.36; // J.Complement
   const precioHoraFestiva = Number(config.precioHoraFestiva) || 21.00;
   const precioHoraExtra = Number(config.precioHoraExtra) || 21.63;
   const plusNocturnidad = Number(config.plusNocturnidadHora) || 1.85;
 
-  // Cálculo de importes variables
-  const importePresencialExceso = totalHorasPresencialesExceso * precioHoraPresencial;
+  // Cálculo proporcional por días trabajados en el periodo
+  const importeSalarioBase = diasLiquidables * precioSalarioBaseDia;
+  const importePlusConvenio = diasLiquidables * precioPlusConvenioDia;
+  const importeProrrataPagas = diasLiquidables * precioProrrataPagaExtraDia;
+  const importeAntiguedad = antiguedadMensual;
+
+  const totalBaseDias = importeSalarioBase + importePlusConvenio + importeProrrataPagas + importeAntiguedad;
+
+  // Importes variables por horas
+  const importeJornadaComplementaria = totalHorasPresencialesExceso * precioHoraOrdinaria;
   const importeFestivos = totalHorasFestivas * precioHoraFestiva;
   const importeExtra = totalHorasExtra * precioHoraExtra;
   const importeNocturnidad = totalHorasNocturnas * plusNocturnidad;
 
-  const estimacionBrutoTotal = totalFijoMensual + importePresencialExceso + importeFestivos + importeExtra + importeNocturnidad;
+  const estimacionBrutoTotal = totalBaseDias + importeJornadaComplementaria + importeFestivos + importeExtra + importeNocturnidad;
 
   return {
     periodo: period,
     fichajesContabilizados: periodLogs.length,
+    diasLiquidables,
     totalHorasTrabajadas: totalHorasPresenciales - totalHorasDescansoDescontadas,
     totalHorasPresenciales,
     totalHorasDescansoDescontadas,
@@ -104,21 +120,24 @@ export function calculatePayrollForPeriod(period) {
     totalHorasExtra,
     totalHorasNocturnas,
     totalDiasFestivos,
-    conceptosFijos: {
-      salarioBase: Math.round(salarioBase * 100) / 100,
-      plusConvenio: Math.round(plusConvenio * 100) / 100,
-      antiguedad: Math.round(antiguedad * 100) / 100,
-      prorrateoPagas: Math.round(prorrateoPagas * 100) / 100,
-      totalFijoMensual: Math.round(totalFijoMensual * 100) / 100
+    conceptosDiarios: {
+      salarioBase: Math.round(importeSalarioBase * 100) / 100,
+      plusConvenio: Math.round(importePlusConvenio * 100) / 100,
+      prorrataPagas: Math.round(importeProrrataPagas * 100) / 100,
+      antiguedad: Math.round(importeAntiguedad * 100) / 100,
+      totalBaseDias: Math.round(totalBaseDias * 100) / 100,
+      precioSalarioBaseDia,
+      precioPlusConvenioDia,
+      precioProrrataPagaExtraDia
     },
     tarifasAplicadas: {
-      precioHoraPresencial,
+      precioHoraOrdinaria,
       precioHoraFestiva,
       precioHoraExtra,
       plusNocturnidad
     },
     desgloseImportes: {
-      presencialExceso: Math.round(importePresencialExceso * 100) / 100,
+      jornadaComplementaria: Math.round(importeJornadaComplementaria * 100) / 100,
       festivos: Math.round(importeFestivos * 100) / 100,
       extra: Math.round(importeExtra * 100) / 100,
       nocturnidad: Math.round(importeNocturnidad * 100) / 100
@@ -132,6 +151,7 @@ function getEmptyPayrollSummary() {
   return {
     periodo: null,
     fichajesContabilizados: 0,
+    diasLiquidables: 0,
     totalHorasTrabajadas: 0,
     totalHorasPresenciales: 0,
     totalHorasDescansoDescontadas: 0,
@@ -140,9 +160,9 @@ function getEmptyPayrollSummary() {
     totalHorasExtra: 0,
     totalHorasNocturnas: 0,
     totalDiasFestivos: 0,
-    conceptosFijos: { salarioBase: 0, plusConvenio: 0, antiguedad: 0, prorrateoPagas: 0, totalFijoMensual: 0 },
-    tarifasAplicadas: { precioHoraPresencial: 12.36, precioHoraFestiva: 21.00, precioHoraExtra: 21.63, plusNocturnidad: 1.85 },
-    desgloseImportes: { presencialExceso: 0, festivos: 0, extra: 0, nocturnidad: 0 },
+    conceptosDiarios: { salarioBase: 0, plusConvenio: 0, prorrataPagas: 0, antiguedad: 0, totalBaseDias: 0, precioSalarioBaseDia: 41.78, precioPlusConvenioDia: 5.58, precioProrrataPagaExtraDia: 8.24 },
+    tarifasAplicadas: { precioHoraOrdinaria: 12.36, precioHoraFestiva: 21.00, precioHoraExtra: 21.63, plusNocturnidad: 1.85 },
+    desgloseImportes: { jornadaComplementaria: 0, festivos: 0, extra: 0, nocturnidad: 0 },
     estimacionBrutoTotal: 0,
     logs: []
   };

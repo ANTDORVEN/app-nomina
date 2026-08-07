@@ -25,7 +25,7 @@ export function initializeDefaultData() {
 }
 
 /**
- * Obtiene la configuración de precios, pluses y conceptos fijos de nómina (Convenio Sevilla 2025)
+ * Obtiene la configuración de precios y conceptos fijos/diarios de nómina ATH
  */
 export function getConfig() {
   initializeDefaultData();

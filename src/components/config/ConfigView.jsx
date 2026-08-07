@@ -4,24 +4,26 @@ import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import './ConfigView.css';
 
 /**
- * ConfigView.jsx - Ajuste de precios de hora presencial, festiva, extra, pluses, conceptos fijos del convenio y backups.
+ * ConfigView.jsx - Ajuste de precios por día (Salario Base, Plus Convenio, Prorrata Pagas), Antigüedad y Tarifas por Hora.
  */
 export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
   const [shiftTypes, setShiftTypes] = useState(getShiftTypes());
 
-  // Tarifas Variables
-  const [precioOrdinaria, setPrecioOrdinaria] = useState(currentConfig.precioHoraOrdinaria || 12.36);
+  // Tarifas por Día (Desglose ATH)
+  const [salarioBaseDia, setSalarioBaseDia] = useState(currentConfig.precioSalarioBaseDia || 41.78);
+  const [plusConvenioDia, setPlusConvenioDia] = useState(currentConfig.precioPlusConvenioDia || 5.58);
+  const [prorrataPagasDia, setProrrataPagasDia] = useState(currentConfig.precioProrrataPagaExtraDia || 8.24);
+
+  // Antigüedad (Tramo Fijo)
+  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 37.60);
+  const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2021-11-01');
+
+  // Tarifas por Hora
+  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria || 12.36);
   const [precioFestiva, setPrecioFestiva] = useState(currentConfig.precioHoraFestiva || 21.00);
   const [precioExtra, setPrecioExtra] = useState(currentConfig.precioHoraExtra || 21.63);
   const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora || 1.85);
-
-  // Conceptos Fijos Mensuales (Convenio Sevilla 2025)
-  const [salarioBase, setSalarioBase] = useState(currentConfig.salarioBaseMensual || 1253.26);
-  const [plusConvenio, setPlusConvenio] = useState(currentConfig.plusConvenio || 167.52);
-  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 62.66);
-  const [prorrateoPagas, setProrrateoPagas] = useState(currentConfig.prorrateoPagasExtra || 247.24);
-  const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2021-11-01');
 
   const [mensaje, setMensaje] = useState('');
 
@@ -40,21 +42,21 @@ export default function ConfigView({ onConfigSaved }) {
 
     const updatedConfig = {
       ...currentConfig,
-      precioHoraOrdinaria: Number(precioOrdinaria),
+      precioSalarioBaseDia: Number(salarioBaseDia),
+      precioPlusConvenioDia: Number(plusConvenioDia),
+      precioProrrataPagaExtraDia: Number(prorrataPagasDia),
+      antiguedadMensual: Number(antiguedad),
+      fechaIngresoEmpresa: fechaIngreso,
+      precioHoraOrdinaria: Number(precioJComplement),
       precioHoraFestiva: Number(precioFestiva),
       precioHoraExtra: Number(precioExtra),
-      plusNocturnidadHora: Number(plusNocturnidad),
-      salarioBaseMensual: Number(salarioBase),
-      plusConvenio: Number(plusConvenio),
-      antiguedadMensual: Number(antiguedad),
-      prorrateoPagasExtra: Number(prorrateoPagas),
-      fechaIngresoEmpresa: fechaIngreso
+      plusNocturnidadHora: Number(plusNocturnidad)
     };
     saveConfig(updatedConfig);
 
     setStorageItem(STORAGE_KEYS.SHIFT_TYPES, shiftTypes);
 
-    setMensaje('¡Configuración de tarifas, conceptos fijos y antigüedad guardada correctamente!');
+    setMensaje('¡Configuración de nómina ATH guardada correctamente!');
     if (onConfigSaved) onConfigSaved();
 
     setTimeout(() => setMensaje(''), 3500);
@@ -104,36 +106,36 @@ export default function ConfigView({ onConfigSaved }) {
 
   return (
     <div className="config-container">
-      <h2 className="config-title">⚙️ Configuración Económica & Convenio</h2>
+      <h2 className="config-title">⚙️ Configuración Económica & Desglose ATH</h2>
       <p className="config-subtitle">
-        Ajusta tus conceptos fijos del Convenio de Sevilla 2025, la antigüedad y las tarifas de hora presencial y festivos.
+        Ajusta tus precios por día trabajado (Salario Base, Plus Convenio, Prorrata Pagas) y tarifas horarias (J.Complement, Festivos).
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
       <form onSubmit={handleSubmit} className="config-form">
-        {/* Conceptos Fijos Mensuales (Convenio Sevilla 2025) */}
-        <h3 className="section-subtitle">🏛️ Conceptos Fijos Mensuales (Convenio Sevilla)</h3>
+        {/* Conceptos Calculados por Día Trabajado */}
+        <h3 className="section-subtitle">📅 Conceptos por Día Trabajado (Convenio Sevilla 2025)</h3>
         
         <div className="form-row">
           <div className="form-group">
-            <label>Salario Base Mensual (€):</label>
+            <label>Salario Base (€/día):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={salarioBase} 
-              onChange={e => setSalarioBase(e.target.value)} 
+              value={salarioBaseDia} 
+              onChange={e => setSalarioBaseDia(e.target.value)} 
               required 
             />
           </div>
 
           <div className="form-group">
-            <label>Plus Convenio Mensual (€):</label>
+            <label>Plus Convenio (€/día):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={plusConvenio} 
-              onChange={e => setPlusConvenio(e.target.value)} 
+              value={plusConvenioDia} 
+              onChange={e => setPlusConvenioDia(e.target.value)} 
               required 
             />
           </div>
@@ -141,23 +143,23 @@ export default function ConfigView({ onConfigSaved }) {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Antigüedad (€ - Tramo Actual 5 Años):</label>
+            <label>Prorrata Paga Extra (€/día):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={antiguedad} 
-              onChange={e => setAntiguedad(e.target.value)} 
+              value={prorrataPagasDia} 
+              onChange={e => setProrrataPagasDia(e.target.value)} 
               required 
             />
           </div>
 
           <div className="form-group">
-            <label>Pagas Extra Prorrateadas (€/mes):</label>
+            <label>Antigüedad (€/mes - 5 Años):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={prorrateoPagas} 
-              onChange={e => setProrrateoPagas(e.target.value)} 
+              value={antiguedad} 
+              onChange={e => setAntiguedad(e.target.value)} 
               required 
             />
           </div>
@@ -171,7 +173,7 @@ export default function ConfigView({ onConfigSaved }) {
             onChange={e => setFechaIngreso(e.target.value)} 
           />
           <small className="field-hint">
-            *Te servirá para actualizar fácilmente el tramo cuando cumplas los 6 años de antigüedad (Noviembre 2026).
+            *Tramo actual: 37,60 €/mes (5 años). En Noviembre 2026 podrás actualizar al tramo de 6 años.
           </small>
         </div>
 
@@ -180,18 +182,18 @@ export default function ConfigView({ onConfigSaved }) {
         
         <div className="form-row">
           <div className="form-group">
-            <label>Precio Hora Presencial / Exceso (€/h):</label>
+            <label>J.Complement / Hora Presencial (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={precioOrdinaria} 
-              onChange={e => setPrecioOrdinaria(e.target.value)} 
+              value={precioJComplement} 
+              onChange={e => setPrecioJComplement(e.target.value)} 
               required 
             />
           </div>
 
           <div className="form-group">
-            <label>Precio Hora Festiva (€/h):</label>
+            <label>Hora Festiva (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -204,7 +206,7 @@ export default function ConfigView({ onConfigSaved }) {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Precio Hora Extra (€/h):</label>
+            <label>Hora Extraordinaria (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -274,7 +276,7 @@ export default function ConfigView({ onConfigSaved }) {
         </div>
 
         <button type="submit" className="save-config-btn">
-          💾 Guardar Tarifas y Horarios
+          💾 Guardar Tarifas y Desglose ATH
         </button>
       </form>
 

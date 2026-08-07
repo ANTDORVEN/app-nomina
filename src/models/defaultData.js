@@ -1,18 +1,23 @@
 /**
- * defaultData.js - Valores por defecto ajustados al Convenio de Sevilla 2025 (Categoría TES, 5 años antigüedad).
+ * defaultData.js - Valores por defecto ajustados a la nómina real del Convenio de Sevilla 2025 (Categoría TES, 5 años antigüedad).
  */
 
 export const DEFAULT_CONFIG = {
-  precioHoraOrdinaria: 12.36,     // Precio hora presencial de exceso (€/h)
-  precioHoraExtra: 21.63,         // Precio hora extra (€/h)
-  precioHoraFestiva: 21.00,       // Precio hora en días festivos (€/h)
-  salarioBaseMensual: 1253.26,    // Salario base mensual
-  plusConvenio: 167.52,           // Plus convenio mensual
-  antiguedadMensual: 62.66,       // Complemento de antigüedad (5 años)
-  prorrateoPagasExtra: 247.24,    // Pagas extra prorrateadas mensualmente
+  // Conceptos calculados por día trabajado/liquidable
+  precioSalarioBaseDia: 41.78,       // Salario Base (€/día)
+  precioPlusConvenioDia: 5.58,       // Plus Convenio (€/día)
+  precioProrrataPagaExtraDia: 8.24,  // Prorrata Paga Extra (€/día)
+
+  // Concepto fijo mensual
+  antiguedadMensual: 37.60,          // Antigüedad (37,60 €/mes para 5 años)
+
+  // Conceptos por hora
+  precioHoraOrdinaria: 12.36,        // J.Complement (Jornada Complementaria €/h presencial de exceso)
+  precioHoraFestiva: 21.00,          // Horas en días festivos (€/h)
+  precioHoraExtra: 21.63,            // Horas extraordinarias (€/h)
+  plusNocturnidadHora: 1.85,         // Plus Nocturnidad (€/h noche)
+  
   fechaIngresoEmpresa: '2021-11-01', // Fecha de ingreso para recálculo de antigüedad
-  plusNocturnidadHora: 1.85,      // Euros/hora de noche
-  plusFestivoDia: 0,              // Plus diario suplementario (opcional)
   mesesPagasExtra: [6, 12]
 };
 
