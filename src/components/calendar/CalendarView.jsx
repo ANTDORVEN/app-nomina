@@ -6,14 +6,14 @@ import { formatDateSpanish, calculateWorkedHours } from '../../utils/dateUtils.j
 import './CalendarView.css';
 
 /**
- * CalendarView.jsx - Vista de cuadrante con generador flexible y edición manual día a día.
+ * CalendarView.jsx - Vista de cuadrante con generador de patrones y horarios editables en lotes.
  */
 export default function CalendarView({ onCalendarUpdated }) {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
 
-  // Estado para modal de edición de día individual (Punto 4: Edición manual de horarios)
+  // Estado para modal de edición de día individual
   const [selectedDay, setSelectedDay] = useState(null);
   const [modalShiftId, setModalShiftId] = useState('manana');
   const [modalHoraEntrada, setModalHoraEntrada] = useState('08:00');
@@ -25,15 +25,17 @@ export default function CalendarView({ onCalendarUpdated }) {
   const [showPatternModal, setShowPatternModal] = useState(false);
   const [patternType, setPatternType] = useState('guardia24');
   const [patternStartDate, setPatternStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [patternDurationMode, setPatternDurationMode] = useState('meses'); // 'meses' o 'rango'
+  const [patternDurationMode, setPatternDurationMode] = useState('meses');
   const [patternMonths, setPatternMonths] = useState(6);
   const [patternEndDate, setPatternEndDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Opciones específicas para patrones L-V y Fin de semana alterno
   const [lvShiftId, setLvShiftId] = useState('manana');
   const [weekendDay, setWeekendDay] = useState('sabado');
-  const [weekendStartTime, setWeekendStartTime] = useState('08:00');
-  const [weekendEndTime, setWeekendEndTime] = useState('16:00');
+
+  // Horarios de entrada y salida editables para el generador masivo de patrones
+  const [patternStartTime, setPatternStartTime] = useState('08:00');
+  const [patternEndTime, setPatternEndTime] = useState('16:00');
 
   // Estado para modal de BORRADO de patrones por rango
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -44,6 +46,23 @@ export default function CalendarView({ onCalendarUpdated }) {
 
   const logs = getAllTimeLogs();
   const shiftTypes = getShiftTypes();
+
+  // Al cambiar el tipo de patrón o el turno L-V, sugerir los horarios por defecto configurados
+  useEffect(() => {
+    if (patternType === 'guardia24') {
+      const gShift = shiftTypes.find(s => s.id === 'guardia24');
+      setPatternStartTime(gShift ? gShift.horaInicio : '08:00');
+      setPatternEndTime(gShift ? gShift.horaFin : '08:00');
+    } else if (patternType === 'lunes_viernes') {
+      const sObj = shiftTypes.find(s => s.id === lvShiftId);
+      setPatternStartTime(sObj ? sObj.horaInicio : '07:00');
+      setPatternEndTime(sObj ? sObj.horaFin : '15:00');
+    } else if (patternType === 'fin_semana_alterno') {
+      const sabShift = shiftTypes.find(s => s.id === 'sabado_alterno');
+      setPatternStartTime(sabShift ? sabShift.horaInicio : '08:00');
+      setPatternEndTime(sabShift ? sabShift.horaFin : '16:00');
+    }
+  }, [patternType, lvShiftId]);
 
   // Actualizar vista previa de borrado
   useEffect(() => {
@@ -96,7 +115,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     }
   };
 
-  // Al cambiar tipo de turno en modal de día individual, actualizar horarios por defecto
+  // Al cambiar tipo de turno en modal de día individual, actualizar horarios
   const handleModalShiftTypeChange = (e) => {
     const sId = e.target.value;
     setModalShiftId(sId);
@@ -107,7 +126,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     }
   };
 
-  // Guardar turno del día seleccionado (Punto 4: Edición manual día a día)
+  // Guardar turno del día seleccionado
   const handleSaveDayShift = (e) => {
     e.preventDefault();
     if (!selectedDay) return;
@@ -129,7 +148,7 @@ export default function CalendarView({ onCalendarUpdated }) {
       horasTrabajadas: horasCalc,
       horasExtra: Math.max(0, horasCalc - horasTeoricas),
       esFestivo: modalShiftId === 'festivo',
-      esPatronAuto: false, // Fichaje manual / edición directa
+      esPatronAuto: false,
       notas: notasFinales,
       companeroIntercambio: modalCompanero.trim()
     });
@@ -145,7 +164,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     if (onCalendarUpdated) onCalendarUpdated();
   };
 
-  // Ejecutar generador de patrones con opciones avanzadas (Puntos 1, 2 y 3)
+  // Ejecutar generador de patrones aplicando los horarios de entrada/salida editables del modal
   const handleRunPatternGenerator = (e) => {
     e.preventDefault();
 
@@ -153,17 +172,17 @@ export default function CalendarView({ onCalendarUpdated }) {
     const months = patternDurationMode === 'meses' ? Number(patternMonths) : null;
 
     if (patternType === 'guardia24') {
-      generateGuardias24hPattern(patternStartDate, months, customEndDate);
+      generateGuardias24hPattern(patternStartDate, months, customEndDate, patternStartTime, patternEndTime);
     } else if (patternType === 'lunes_viernes') {
-      generateLunesViernesPattern(patternStartDate, months, customEndDate, lvShiftId);
+      generateLunesViernesPattern(patternStartDate, months, customEndDate, lvShiftId, patternStartTime, patternEndTime);
     } else if (patternType === 'fin_semana_alterno') {
       generateFinDeSemanaAlternoPattern(
         patternStartDate,
         months,
         customEndDate,
         weekendDay,
-        weekendStartTime,
-        weekendEndTime
+        patternStartTime,
+        patternEndTime
       );
     }
 
@@ -269,7 +288,7 @@ export default function CalendarView({ onCalendarUpdated }) {
         })}
       </div>
 
-      {/* MODAL 1: Editar Día Individual (Punto 4: Edición manual día a día) */}
+      {/* MODAL 1: Editar Día Individual */}
       {selectedDay && (
         <div className="modal-backdrop" onClick={() => setSelectedDay(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -288,7 +307,6 @@ export default function CalendarView({ onCalendarUpdated }) {
                 </select>
               </div>
 
-              {/* Horario Personalizado Día a Día */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Hora Entrada:</label>
@@ -341,7 +359,7 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       )}
 
-      {/* MODAL 2: Generador de Patrones Flexible (Puntos 1, 2 y 3) */}
+      {/* MODAL 2: Generador de Patrones con Horarios Editables en Lote */}
       {showPatternModal && (
         <div className="modal-backdrop" onClick={() => setShowPatternModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -360,51 +378,51 @@ export default function CalendarView({ onCalendarUpdated }) {
                 </select>
               </div>
 
-              {/* Si es Turno Lunes a Viernes (Punto 1) */}
+              {/* Si es Turno Lunes a Viernes */}
               {patternType === 'lunes_viernes' && (
                 <div className="form-group">
                   <label>Selecciona el turno de Lunes a Viernes:</label>
                   <select value={lvShiftId} onChange={e => setLvShiftId(e.target.value)}>
-                    <option value="manana">Mañana (08:00 - 16:00)</option>
-                    <option value="tarde">Tarde (16:00 - 00:00)</option>
-                    <option value="noche">Noche (00:00 - 08:00)</option>
+                    <option value="manana">Mañana</option>
+                    <option value="tarde">Tarde</option>
+                    <option value="noche">Noche</option>
+                    <option value="turno12">Turno 12h (11h Pagadas)</option>
                   </select>
                 </div>
               )}
 
-              {/* Si es Fin de Semana Alterno (Puntos 2 y 3) */}
+              {/* Si es Fin de Semana Alterno */}
               {patternType === 'fin_semana_alterno' && (
-                <>
-                  <div className="form-group">
-                    <label>Elegir día de fin de semana alterno (Punto 3):</label>
-                    <select value={weekendDay} onChange={e => setWeekendDay(e.target.value)}>
-                      <option value="sabado">Sábado Alterno</option>
-                      <option value="domingo">Domingo Alterno</option>
-                    </select>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Hora Inicio Personalizada (Punto 2):</label>
-                      <input 
-                        type="time" 
-                        value={weekendStartTime} 
-                        onChange={e => setWeekendStartTime(e.target.value)} 
-                        required 
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Hora Fin Personalizada:</label>
-                      <input 
-                        type="time" 
-                        value={weekendEndTime} 
-                        onChange={e => setWeekendEndTime(e.target.value)} 
-                        required 
-                      />
-                    </div>
-                  </div>
-                </>
+                <div className="form-group">
+                  <label>Elegir día de fin de semana alterno:</label>
+                  <select value={weekendDay} onChange={e => setWeekendDay(e.target.value)}>
+                    <option value="sabado">Sábado Alterno</option>
+                    <option value="domingo">Domingo Alterno</option>
+                  </select>
+                </div>
               )}
+
+              {/* Campos Editables de Hora Entrada / Salida para TODO el patrón generado */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Hora Entrada para el patrón:</label>
+                  <input 
+                    type="time" 
+                    value={patternStartTime} 
+                    onChange={e => setPatternStartTime(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Hora Salida para el patrón:</label>
+                  <input 
+                    type="time" 
+                    value={patternEndTime} 
+                    onChange={e => setPatternEndTime(e.target.value)} 
+                    required 
+                  />
+                </div>
+              </div>
 
               {/* Selector de Modo de Duración */}
               <div className="form-group">

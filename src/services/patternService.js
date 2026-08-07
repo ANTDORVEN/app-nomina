@@ -1,5 +1,7 @@
 /**
  * patternService.js - Servicio avanzado para generación y borrado de patrones de turnos TES.
+ * 
+ * Permite especificar horarios de entrada/salida personalizados para la generación masiva de patrones.
  */
 
 import { saveTimeLog, getShiftTypes, getAllTimeLogs } from './shiftService.js';
@@ -9,7 +11,7 @@ import { formatDateToISO, calculateWorkedHours } from '../utils/dateUtils.js';
 /**
  * Genera el patrón de Guardias de 24h (1 día guardia + 3 días descanso)
  */
-export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, fechaFinCustom = null) {
+export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, fechaFinCustom = null, horaInicio = '08:00', horaSalida = '08:00') {
   if (!fechaInicioGuardia) return;
 
   const startDate = new Date(fechaInicioGuardia + 'T00:00:00');
@@ -23,8 +25,10 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
   }
 
   const shiftTypes = getShiftTypes();
-  const guardiaShift = shiftTypes.find(s => s.id === 'guardia24') || { id: 'guardia24', horaInicio: '08:00', horaFin: '08:00', horasTeoricas: 24 };
+  const guardiaShift = shiftTypes.find(s => s.id === 'guardia24') || { id: 'guardia24', horasTeoricas: 24 };
   const libreShift = shiftTypes.find(s => s.id === 'libre') || { id: 'libre', horaInicio: '00:00', horaFin: '00:00', horasTeoricas: 0 };
+
+  const horasGuardia = calculateWorkedHours(horaInicio, horaSalida) || 24;
 
   let currDate = new Date(startDate);
   let dayCounter = 0;
@@ -36,13 +40,13 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
       saveTimeLog({
         fecha: isoDate,
         tipoTurnoId: 'guardia24',
-        horaEntradaReal: guardiaShift.horaInicio,
-        horaSalidaReal: guardiaShift.horaFin,
-        horasTrabajadas: 24,
-        horasExtra: 0,
+        horaEntradaReal: horaInicio,
+        horaSalidaReal: horaSalida,
+        horasTrabajadas: horasGuardia,
+        horasExtra: Math.max(0, horasGuardia - 24),
         esFestivo: false,
         esPatronAuto: true,
-        notas: 'Guardia 24h (Patrón Rotativo)'
+        notas: `Guardia 24h (${horaInicio}-${horaSalida}) (Patrón Rotativo)`
       });
     } else {
       saveTimeLog({
@@ -64,9 +68,9 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
 }
 
 /**
- * Genera patrón de Lunes a Viernes con el tipo de turno seleccionado (Mañana, Tarde, Noche)
+ * Genera patrón de Lunes a Viernes con el tipo de turno seleccionado y HORARIOS PERSONALIZADOS
  */
-export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaFinCustom = null, tipoTurnoId = 'manana') {
+export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaFinCustom = null, tipoTurnoId = 'manana', horaInicio = '07:00', horaSalida = '15:00') {
   if (!fechaInicio) return;
 
   const startDate = new Date(fechaInicio + 'T00:00:00');
@@ -82,23 +86,26 @@ export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaF
   const shiftTypes = getShiftTypes();
   const shiftObj = shiftTypes.find(s => s.id === tipoTurnoId) || shiftTypes[0];
 
+  const horasCalc = calculateWorkedHours(horaInicio, horaSalida);
+  const horasTeoricas = shiftObj.horasTeoricas || 8;
+
   let currDate = new Date(startDate);
 
   while (currDate <= endDate) {
-    const dayOfWeek = currDate.getDay(); // 0 = Domingo, 1 = Lunes, ..., 5 = Viernes, 6 = Sábado
+    const dayOfWeek = currDate.getDay();
 
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
       const isoDate = formatDateToISO(currDate);
       saveTimeLog({
         fecha: isoDate,
         tipoTurnoId,
-        horaEntradaReal: shiftObj.horaInicio,
-        horaSalidaReal: shiftObj.horaFin,
-        horasTrabajadas: shiftObj.horasTeoricas,
-        horasExtra: 0,
+        horaEntradaReal: horaInicio,
+        horaSalidaReal: horaSalida,
+        horasTrabajadas: horasCalc,
+        horasExtra: Math.max(0, horasCalc - horasTeoricas),
         esFestivo: false,
         esPatronAuto: true,
-        notas: `${shiftObj.nombre} L-V (Patrón Rotativo)`
+        notas: `${shiftObj.nombre} (${horaInicio}-${horaSalida}) L-V (Patrón Rotativo)`
       });
     }
 
@@ -107,11 +114,7 @@ export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaF
 }
 
 /**
- * Genera patrón de Fin de Semana Alterno (Sábado o Domingo) con HORARIO PERSONALIZADO
- * 
- * CORRECCIÓN DE BUG:
- * Garantiza que currDate se desplace siempre al primer SÁBADO (día 6) o DOMINGO (día 0)
- * correspondiente, evitando que un inicio en Lunes desplace las asignaciones a la columna incorrecta.
+ * Genera patrón de Fin de Semana Alterno (Sábado o Domingo) con HORARIOS PERSONALIZADOS
  */
 export function generateFinDeSemanaAlternoPattern(primerDiaFecha, numeroMeses = 6, fechaFinCustom = null, diaSemanaElegido = 'sabado', horaInicio = '08:00', horaSalida = '16:00') {
   if (!primerDiaFecha) return;
@@ -126,7 +129,6 @@ export function generateFinDeSemanaAlternoPattern(primerDiaFecha, numeroMeses = 
     endDate.setMonth(endDate.getMonth() + (numeroMeses || 6));
   }
 
-  // Corregir desfase de día de la semana: 6 = Sábado, 0 = Domingo
   const targetDayOfWeek = diaSemanaElegido === 'sabado' ? 6 : 0;
   while (currDate.getDay() !== targetDayOfWeek) {
     currDate.setDate(currDate.getDate() + 1);
@@ -151,7 +153,6 @@ export function generateFinDeSemanaAlternoPattern(primerDiaFecha, numeroMeses = 
       notas: `${nombreEtiqueta} (${horaInicio}-${horaSalida}) (Patrón Rotativo)`
     });
 
-    // Sumar 14 días (2 semanas)
     currDate.setDate(currDate.getDate() + 14);
   }
 }
