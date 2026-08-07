@@ -90,7 +90,7 @@
 .calendar-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px 12px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
@@ -108,6 +108,12 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-full-name {
+  opacity: 0.8;
+  font-size: 0.7rem;
 }
 
 .calendar-grid {
@@ -161,32 +167,44 @@
 .day-shift-badge {
   color: #fff;
   border-radius: 4px;
-  padding: 3px 4px;
-  font-size: 0.68rem;
-  font-weight: 700;
+  padding: 3px 2px;
+  font-size: 0.72rem;
+  font-weight: 800;
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
   overflow: hidden;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .shift-name-short {
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.2px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .shift-hours {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   opacity: 0.9;
+  font-weight: 600;
 }
 
 .exchange-tag {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: #fef08a;
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.25);
   padding: 1px 3px;
   border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Modales */

@@ -14,6 +14,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'manana',
     nombre: 'Mañana (M)',
+    nombreCorto: 'M',
     horaInicio: '07:00',
     horaFin: '15:00',
     horasTeoricas: 8,
@@ -24,6 +25,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'tarde',
     nombre: 'Tarde (T)',
+    nombreCorto: 'T',
     horaInicio: '15:00',
     horaFin: '23:00',
     horasTeoricas: 8,
@@ -34,6 +36,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'noche',
     nombre: 'Noche (N)',
+    nombreCorto: 'N',
     horaInicio: '23:00',
     horaFin: '07:00',
     horasTeoricas: 8,
@@ -44,6 +47,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'turno12',
     nombre: 'Turno 12h (11h Pagadas)',
+    nombreCorto: '12h',
     horaInicio: '08:00',
     horaFin: '20:00',
     horasTeoricas: 12,
@@ -54,6 +58,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'guardia24',
     nombre: 'Guardia 24h (G24)',
+    nombreCorto: 'G24',
     horaInicio: '08:00',
     horaFin: '08:00',
     horasTeoricas: 24,
@@ -62,8 +67,20 @@ export const DEFAULT_SHIFT_TYPES = [
     color: '#10b981'
   },
   {
+    id: 'patron_5x2',
+    nombre: 'Patrón 5x2 / 2x5',
+    nombreCorto: '5x2',
+    horaInicio: '08:00',
+    horaFin: '16:00',
+    horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
+    generaNocturnidad: false,
+    color: '#06b6d4'
+  },
+  {
     id: 'sabado_alterno',
     nombre: 'Sábado Alterno',
+    nombreCorto: 'S. Alt',
     horaInicio: '08:00',
     horaFin: '16:00',
     horasTeoricas: 8,
@@ -74,6 +91,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'festivo',
     nombre: 'Festivo Trabajado',
+    nombreCorto: 'Fest.',
     horaInicio: '08:00',
     horaFin: '16:00',
     horasTeoricas: 8,
@@ -84,6 +102,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'vacaciones',
     nombre: 'Vacaciones',
+    nombreCorto: 'Vac.',
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,
@@ -95,6 +114,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'baja_laboral',
     nombre: 'Baja Laboral / Médica',
+    nombreCorto: 'B. Méd',
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,
@@ -106,6 +126,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'paternidad_maternidad',
     nombre: 'Baja Paternidad / Maternidad',
+    nombreCorto: 'B. Pat',
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,
@@ -117,6 +138,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'asuntos_propios',
     nombre: 'Asuntos Propios / Moscoso',
+    nombreCorto: 'A.P.',
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,
@@ -128,6 +150,7 @@ export const DEFAULT_SHIFT_TYPES = [
   {
     id: 'libre',
     nombre: 'Descanso / Libre',
+    nombreCorto: 'Libre',
     horaInicio: '00:00',
     horaFin: '00:00',
     horasTeoricas: 0,

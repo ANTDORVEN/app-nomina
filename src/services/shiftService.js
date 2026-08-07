@@ -40,15 +40,21 @@ export function saveConfig(newConfig) {
 }
 
 /**
- * Obtiene la lista de tipos de turnos (Mañana, Tarde, Noche, Guardia 24h, Bajas, etc.)
- * Fusiona automáticamente nuevos tipos añadidos al sistema si no existen aún en localStorage.
+ * Obtiene la lista de tipos de turnos con sus abreviaturas compactas (nombreCorto)
  */
 export function getShiftTypes() {
   initializeDefaultData();
   const stored = getStorageItem(STORAGE_KEYS.SHIFT_TYPES, DEFAULT_SHIFT_TYPES);
 
   let needsUpdate = false;
-  const merged = [...stored];
+  const merged = stored.map(st => {
+    const def = DEFAULT_SHIFT_TYPES.find(d => d.id === st.id);
+    if (def && (!st.nombreCorto || st.nombreCorto !== def.nombreCorto)) {
+      needsUpdate = true;
+      return { ...st, nombreCorto: def.nombreCorto };
+    }
+    return st;
+  });
 
   DEFAULT_SHIFT_TYPES.forEach(defType => {
     if (!merged.some(st => st.id === defType.id)) {

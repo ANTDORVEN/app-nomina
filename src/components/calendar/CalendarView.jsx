@@ -6,7 +6,7 @@ import { formatDateSpanish, calculateWorkedHours } from '../../utils/dateUtils.j
 import './CalendarView.css';
 
 /**
- * CalendarView.jsx - Vista de cuadrante con generador de turnos y ausencias (Vacaciones, Bajas, Asuntos Propios).
+ * CalendarView.jsx - Vista de cuadrante con etiquetas abreviadas compactas para móvil y tooltip completo.
  */
 export default function CalendarView({ onCalendarUpdated }) {
   const today = new Date();
@@ -25,7 +25,7 @@ export default function CalendarView({ onCalendarUpdated }) {
   const [showPatternModal, setShowPatternModal] = useState(false);
   const [patternType, setPatternType] = useState('guardia24');
   const [patternStartDate, setPatternStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [patternDurationMode, setPatternDurationMode] = useState('rango'); // 'meses' o 'rango'
+  const [patternDurationMode, setPatternDurationMode] = useState('rango');
   const [patternMonths, setPatternMonths] = useState(1);
   const [patternEndDate, setPatternEndDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -238,11 +238,13 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       </div>
 
+      {/* Leyenda con abreviaturas y nombres completos */}
       <div className="calendar-legend">
         {shiftTypes.map(st => (
-          <span key={st.id} className="legend-item">
+          <span key={st.id} className="legend-item" title={st.nombre}>
             <span className="legend-color" style={{ backgroundColor: st.color }}></span>
-            {st.nombre}
+            <strong>{st.nombreCorto || st.nombre}</strong>
+            <span className="legend-full-name">({st.nombre})</span>
           </span>
         ))}
       </div>
@@ -255,15 +257,20 @@ export default function CalendarView({ onCalendarUpdated }) {
         {daysGrid.map((dayItem, index) => {
           const logForDay = logs.find(l => l.fecha === dayItem.dateIso);
           const shiftObj = logForDay 
-            ? (shiftTypes.find(s => s.id === logForDay.tipoTurnoId) || { nombre: logForDay.tipoTurnoId, color: '#805ad5' }) 
+            ? (shiftTypes.find(s => s.id === logForDay.tipoTurnoId) || { nombre: logForDay.tipoTurnoId, nombreCorto: logForDay.tipoTurnoId, color: '#805ad5' }) 
             : null;
           const isToday = dayItem.dateIso === new Date().toISOString().split('T')[0];
+
+          const tooltipText = logForDay && shiftObj 
+            ? `${shiftObj.nombre}${logForDay.notas ? ` • ${logForDay.notas}` : ''}`
+            : (shiftObj ? shiftObj.nombre : '');
 
           return (
             <div 
               key={index} 
               className={`calendar-day-cell ${!dayItem.isCurrentMonth ? 'outside-month' : ''} ${isToday ? 'is-today' : ''}`}
               onClick={() => handleDayClick(dayItem)}
+              title={tooltipText}
             >
               <span className="day-number">{dayItem.dayNumber}</span>
               
@@ -271,9 +278,8 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <div 
                   className="day-shift-badge" 
                   style={{ backgroundColor: shiftObj.color }}
-                  title={logForDay.notas || shiftObj.nombre}
                 >
-                  <span className="shift-name-short">{shiftObj.nombre}</span>
+                  <span className="shift-name-short">{shiftObj.nombreCorto || shiftObj.nombre}</span>
                   {logForDay.horasTrabajadas > 0 && (
                     <span className="shift-hours">{logForDay.horasTrabajadas}h</span>
                   )}
@@ -304,7 +310,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <label>Tipo de Turno / Ausencia:</label>
                 <select value={modalShiftId} onChange={handleModalShiftTypeChange}>
                   {shiftTypes.map(st => (
-                    <option key={st.id} value={st.id}>{st.nombre}</option>
+                    <option key={st.id} value={st.id}>{st.nombre} ({st.nombreCorto})</option>
                   ))}
                 </select>
               </div>
@@ -389,10 +395,10 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <div className="form-group">
                   <label>Selecciona el tipo de ausencia:</label>
                   <select value={ausenciaTypeId} onChange={e => setAusenciaTypeId(e.target.value)}>
-                    <option value="vacaciones">🌴 Vacaciones</option>
-                    <option value="baja_laboral">🏥 Baja Laboral / Médica</option>
-                    <option value="paternidad_maternidad">👶 Baja Paternidad / Maternidad</option>
-                    <option value="asuntos_propios">💼 Asuntos Propios / Moscoso</option>
+                    <option value="vacaciones">🌴 Vacaciones (Vac.)</option>
+                    <option value="baja_laboral">🏥 Baja Laboral / Médica (B. Méd)</option>
+                    <option value="paternidad_maternidad">👶 Baja Paternidad / Maternidad (B. Pat)</option>
+                    <option value="asuntos_propios">💼 Asuntos Propios / Moscoso (A.P.)</option>
                   </select>
                 </div>
               )}
@@ -402,10 +408,10 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <div className="form-group">
                   <label>Selecciona el turno de Lunes a Viernes:</label>
                   <select value={lvShiftId} onChange={e => setLvShiftId(e.target.value)}>
-                    <option value="manana">Mañana</option>
-                    <option value="tarde">Tarde</option>
-                    <option value="noche">Noche</option>
-                    <option value="turno12">Turno 12h (11h Pagadas)</option>
+                    <option value="manana">Mañana (M)</option>
+                    <option value="tarde">Tarde (T)</option>
+                    <option value="noche">Noche (N)</option>
+                    <option value="turno12">Turno 12h (12h)</option>
                   </select>
                 </div>
               )}
@@ -415,8 +421,8 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <div className="form-group">
                   <label>Elegir día de fin de semana alterno:</label>
                   <select value={weekendDay} onChange={e => setWeekendDay(e.target.value)}>
-                    <option value="sabado">Sábado Alterno</option>
-                    <option value="domingo">Domingo Alterno</option>
+                    <option value="sabado">Sábado Alterno (S. Alt)</option>
+                    <option value="domingo">Domingo Alterno (Fest.)</option>
                   </select>
                 </div>
               )}
