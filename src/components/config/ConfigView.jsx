@@ -4,19 +4,27 @@ import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import './ConfigView.css';
 
 /**
- * ConfigView.jsx - Ajuste de precios de hora, pluses, edición de horarios por turno y backup JSON.
+ * ConfigView.jsx - Ajuste de precios de hora, pluses, conceptos fijos del convenio, horarios de turnos y backup JSON.
  */
 export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
   const [shiftTypes, setShiftTypes] = useState(getShiftTypes());
 
+  // Tarifas Variables
   const [precioOrdinaria, setPrecioOrdinaria] = useState(currentConfig.precioHoraOrdinaria);
   const [precioExtra, setPrecioExtra] = useState(currentConfig.precioHoraExtra);
   const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora);
   const [plusFestivo, setPlusFestivo] = useState(currentConfig.plusFestivoDia);
+
+  // Conceptos Fijos Mensuales (Convenio Sevilla 2025)
+  const [salarioBase, setSalarioBase] = useState(currentConfig.salarioBaseMensual || 1253.26);
+  const [plusConvenio, setPlusConvenio] = useState(currentConfig.plusConvenio || 167.52);
+  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 62.66);
+  const [prorrateoPagas, setProrrateoPagas] = useState(currentConfig.prorrateoPagasExtra || 247.24);
+  const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2021-11-01');
+
   const [mensaje, setMensaje] = useState('');
 
-  // Actualizar un campo de horario de un tipo de turno
   const handleShiftTypeTimeChange = (id, field, value) => {
     const updated = shiftTypes.map(st => {
       if (st.id === id) {
@@ -30,20 +38,23 @@ export default function ConfigView({ onConfigSaved }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Guardar precios
     const updatedConfig = {
       ...currentConfig,
       precioHoraOrdinaria: Number(precioOrdinaria),
       precioHoraExtra: Number(precioExtra),
       plusNocturnidadHora: Number(plusNocturnidad),
-      plusFestivoDia: Number(plusFestivo)
+      plusFestivoDia: Number(plusFestivo),
+      salarioBaseMensual: Number(salarioBase),
+      plusConvenio: Number(plusConvenio),
+      antiguedadMensual: Number(antiguedad),
+      prorrateoPagasExtra: Number(prorrateoPagas),
+      fechaIngresoEmpresa: fechaIngreso
     };
     saveConfig(updatedConfig);
 
-    // Guardar horarios por defecto de los turnos (Punto 1 y 2)
     setStorageItem(STORAGE_KEYS.SHIFT_TYPES, shiftTypes);
 
-    setMensaje('¡Configuración de tarifas y horarios de turnos actualizada!');
+    setMensaje('¡Configuración de tarifas, conceptos fijos y antigüedad guardada correctamente!');
     if (onConfigSaved) onConfigSaved();
 
     setTimeout(() => setMensaje(''), 3500);
@@ -93,19 +104,83 @@ export default function ConfigView({ onConfigSaved }) {
 
   return (
     <div className="config-container">
-      <h2 className="config-title">⚙️ Configuración Económica & Horarios de Turnos</h2>
+      <h2 className="config-title">⚙️ Configuración Económica & Convenio</h2>
       <p className="config-subtitle">
-        Personaliza los horarios de tus turnos (ej. Mañana 07:00-15:00) y las horas de descanso no pagadas.
+        Ajusta tus conceptos fijos del Convenio de Sevilla 2025, la antigüedad y las tarifas de hora.
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
       <form onSubmit={handleSubmit} className="config-form">
-        {/* Tarifas de Nómina */}
-        <h3 className="section-subtitle">💶 Tarifas e Importes por Hora</h3>
+        {/* Conceptos Fijos Mensuales (Convenio Sevilla 2025) */}
+        <h3 className="section-subtitle">🏛️ Conceptos Fijos Mensuales (Convenio Sevilla)</h3>
+        
         <div className="form-row">
           <div className="form-group">
-            <label>Precio Hora Ordinaria (€/h):</label>
+            <label>Salario Base Mensual (€):</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={salarioBase} 
+              onChange={e => setSalarioBase(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Plus Convenio Mensual (€):</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={plusConvenio} 
+              onChange={e => setPlusConvenio(e.target.value)} 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Antigüedad (€ - Tramo Actual 5 Años):</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={antiguedad} 
+              onChange={e => setAntiguedad(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Pagas Extra Prorrateadas (€/mes):</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={prorrateoPagas} 
+              onChange={e => setProrrateoPagas(e.target.value)} 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>📅 Fecha de Ingreso en la Empresa (Cómputo de Antigüedad):</label>
+          <input 
+            type="date" 
+            value={fechaIngreso} 
+            onChange={e => setFechaIngreso(e.target.value)} 
+          />
+          <small className="field-hint">
+            *Te servirá para actualizar fácilmente el tramo cuando cumplas los 6 años de antigüedad (Noviembre 2026).
+          </small>
+        </div>
+
+        {/* Tarifas Variables de Hora */}
+        <h3 className="section-subtitle">💶 Tarifas Variables por Hora & Pluses</h3>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label>Precio Hora Presencia (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -151,7 +226,7 @@ export default function ConfigView({ onConfigSaved }) {
           </div>
         </div>
 
-        {/* Horarios por defecto de los turnos (Punto 1 y 2) */}
+        {/* Horarios por defecto de los turnos */}
         <h3 className="section-subtitle">⏱️ Horarios por Defecto de los Tipos de Turno</h3>
         <p className="section-desc">Ajusta la hora de inicio y fin de cada turno para adaptarlo a tus horarios reales de servicio.</p>
 
@@ -160,7 +235,7 @@ export default function ConfigView({ onConfigSaved }) {
             <div key={st.id} className="shift-type-row">
               <div className="shift-type-name">
                 <span className="color-dot" style={{ backgroundColor: st.color }}></span>
-                <strong>{st.nombre}</strong>
+                <strong>{st.nombre}</strong> ({st.nombreCorto})
               </div>
 
               <div className="shift-type-inputs">

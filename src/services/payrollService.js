@@ -1,8 +1,8 @@
 /**
  * payrollService.js - Servicio de cálculo de nómina y acumulación por período de cobro.
  * 
- * Descuenta automáticamente la hora de descanso no pagada (ej. Turno 12h con 11h pagadas)
- * sin alterar la presencia real en el calendario.
+ * Integra conceptos fijos mensuales del Convenio de Sevilla (Salario Base, Plus Convenio,
+ * Antigüedad, Prorrateo Pagas Extra) más la parte variable (horas presencia, extras, nocturnidad, festivos).
  */
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
@@ -65,23 +65,38 @@ export function calculatePayrollForPeriod(period) {
     }
   });
 
+  // Conceptos fijos mensuales del convenio
+  const salarioBase = Number(config.salarioBaseMensual) || 0;
+  const plusConvenio = Number(config.plusConvenio) || 0;
+  const antiguedad = Number(config.antiguedadMensual) || 0;
+  const prorrateoPagas = Number(config.prorrateoPagasExtra) || 0;
+  const totalFijoMensual = salarioBase + plusConvenio + antiguedad + prorrateoPagas;
+
+  // Variables horarias
   const importeOrdinario = totalHorasOrdinarias * config.precioHoraOrdinaria;
   const importeExtra = totalHorasExtra * config.precioHoraExtra;
   const importeNocturnidad = totalHorasNocturnas * config.plusNocturnidadHora;
   const importeFestivos = totalDiasFestivos * config.plusFestivoDia;
 
-  const estimacionBrutoTotal = importeOrdinario + importeExtra + importeNocturnidad + importeFestivos;
+  const estimacionBrutoTotal = totalFijoMensual + importeOrdinario + importeExtra + importeNocturnidad + importeFestivos;
 
   return {
     periodo: period,
     fichajesContabilizados: periodLogs.length,
-    totalHorasTrabajadas: totalHorasOrdinarias + totalHorasExtra, // Horas abonadas
-    totalHorasPresenciales, // Horas en reloj / presencia real
+    totalHorasTrabajadas: totalHorasOrdinarias + totalHorasExtra,
+    totalHorasPresenciales,
     totalHorasDescansoDescontadas,
     totalHorasOrdinarias,
     totalHorasExtra,
     totalHorasNocturnas,
     totalDiasFestivos,
+    conceptosFijos: {
+      salarioBase: Math.round(salarioBase * 100) / 100,
+      plusConvenio: Math.round(plusConvenio * 100) / 100,
+      antiguedad: Math.round(antiguedad * 100) / 100,
+      prorrateoPagas: Math.round(prorrateoPagas * 100) / 100,
+      totalFijoMensual: Math.round(totalFijoMensual * 100) / 100
+    },
     desgloseImportes: {
       ordinario: Math.round(importeOrdinario * 100) / 100,
       extra: Math.round(importeExtra * 100) / 100,
@@ -104,6 +119,7 @@ function getEmptyPayrollSummary() {
     totalHorasExtra: 0,
     totalHorasNocturnas: 0,
     totalDiasFestivos: 0,
+    conceptosFijos: { salarioBase: 0, plusConvenio: 0, antiguedad: 0, prorrateoPagas: 0, totalFijoMensual: 0 },
     desgloseImportes: { ordinario: 0, extra: 0, nocturnidad: 0, festivos: 0 },
     estimacionBrutoTotal: 0,
     logs: []

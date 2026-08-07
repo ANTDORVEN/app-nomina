@@ -133,12 +133,15 @@
   gap: 8px;
 }
 
-.desglose-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  padding: 4px 0;
+.desglose-row.subtotal-row {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 8px;
+  margin-top: 4px;
+  color: var(--text-main);
+}
+
+.concept-amount.highlight {
+  color: var(--primary-500);
 }
 
 .concept-amount {

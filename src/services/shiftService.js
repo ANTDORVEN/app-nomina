@@ -25,11 +25,26 @@ export function initializeDefaultData() {
 }
 
 /**
- * Obtiene la configuración de precios y pluses
+ * Obtiene la configuración de precios, pluses y conceptos fijos de nómina (Convenio Sevilla 2025)
  */
 export function getConfig() {
   initializeDefaultData();
-  return getStorageItem(STORAGE_KEYS.CONFIG, DEFAULT_CONFIG);
+  const storedConfig = getStorageItem(STORAGE_KEYS.CONFIG, DEFAULT_CONFIG);
+
+  let needsUpdate = false;
+  const mergedConfig = { ...DEFAULT_CONFIG, ...storedConfig };
+
+  Object.keys(DEFAULT_CONFIG).forEach(key => {
+    if (storedConfig[key] === undefined) {
+      needsUpdate = true;
+    }
+  });
+
+  if (needsUpdate) {
+    setStorageItem(STORAGE_KEYS.CONFIG, mergedConfig);
+  }
+
+  return mergedConfig;
 }
 
 /**

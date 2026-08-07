@@ -1,12 +1,17 @@
 /**
- * defaultData.js - Valores por defecto y datos semilla para la aplicación de Nómina TES.
+ * defaultData.js - Valores por defecto ajustados al Convenio de Sevilla 2025 (Categoría TES, 5 años antigüedad).
  */
 
 export const DEFAULT_CONFIG = {
-  precioHoraOrdinaria: 10.50,  // Euros/hora presencial
-  precioHoraExtra: 14.00,      // Euros/hora extra
-  plusNocturnidadHora: 1.85,   // Euros/hora de noche
-  plusFestivoDia: 35.00,       // Importe adicional por jornada festiva
+  precioHoraOrdinaria: 12.36,     // Precio hora presencia Convenio Sevilla 2025
+  precioHoraExtra: 21.63,         // Precio hora extra
+  salarioBaseMensual: 1253.26,    // Salario base mensual
+  plusConvenio: 167.52,           // Plus convenio mensual
+  antiguedadMensual: 62.66,       // Complemento de antigüedad (5 años)
+  prorrateoPagasExtra: 247.24,    // Pagas extra prorrateadas mensualmente
+  fechaIngresoEmpresa: '2021-11-01', // Fecha de ingreso para recálculo de antigüedad
+  plusNocturnidadHora: 1.85,      // Euros/hora de noche
+  plusFestivoDia: 35.00,          // Importe adicional por jornada festiva
   mesesPagasExtra: [6, 12]
 };
 
