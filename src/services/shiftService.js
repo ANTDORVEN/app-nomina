@@ -110,7 +110,7 @@ export function getAllTimeLogs() {
 }
 
 /**
- * Guarda o actualiza un fichaje diario
+ * Guarda o actualiza un fichaje diario asignando IDs únicos incluso en bucles de generación masiva
  */
 export function saveTimeLog(logData) {
   const logs = getAllTimeLogs();
@@ -119,8 +119,9 @@ export function saveTimeLog(logData) {
   if (existingIndex >= 0) {
     logs[existingIndex] = { ...logs[existingIndex], ...logData, updatedAt: new Date().toISOString() };
   } else {
+    const uniqueId = logData.id || ('log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7));
     logs.push({
-      id: 'log_' + Date.now(),
+      id: uniqueId,
       createdAt: new Date().toISOString(),
       ...logData
     });
