@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MONTH_NAMES, DAY_NAMES, getMonthDaysGrid } from '../../utils/calendarUtils.js';
 import { getAllTimeLogs, getShiftTypes, saveTimeLog, deleteTimeLog } from '../../services/shiftService.js';
-import { generateGuardias24hPattern, generateLunesViernesPattern, generateFinDeSemanaAlternoPattern, previewDeletePatternInRange, deletePatternInRange } from '../../services/patternService.js';
+import { generateGuardias24hPattern, generateLunesViernesPattern, generateFinDeSemanaAlternoPattern, generateAusenciaPattern, previewDeletePatternInRange, deletePatternInRange } from '../../services/patternService.js';
 import { formatDateSpanish, calculateWorkedHours } from '../../utils/dateUtils.js';
 import './CalendarView.css';
 
 /**
- * CalendarView.jsx - Vista de cuadrante con generador de patrones y horarios editables en lotes.
+ * CalendarView.jsx - Vista de cuadrante con generador de turnos y ausencias (Vacaciones, Bajas, Asuntos Propios).
  */
 export default function CalendarView({ onCalendarUpdated }) {
   const today = new Date();
@@ -29,11 +29,12 @@ export default function CalendarView({ onCalendarUpdated }) {
   const [patternMonths, setPatternMonths] = useState(6);
   const [patternEndDate, setPatternEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Opciones específicas para patrones L-V y Fin de semana alterno
+  // Opciones específicas para patrones L-V, Fin de semana alterno y Ausencias
   const [lvShiftId, setLvShiftId] = useState('manana');
   const [weekendDay, setWeekendDay] = useState('sabado');
+  const [ausenciaTypeId, setAusenciaTypeId] = useState('vacaciones');
 
-  // Horarios de entrada y salida editables para el generador masivo de patrones
+  // Horarios de entrada y salida editables para el generador masivo
   const [patternStartTime, setPatternStartTime] = useState('08:00');
   const [patternEndTime, setPatternEndTime] = useState('16:00');
 
@@ -47,7 +48,7 @@ export default function CalendarView({ onCalendarUpdated }) {
   const logs = getAllTimeLogs();
   const shiftTypes = getShiftTypes();
 
-  // Al cambiar el tipo de patrón o el turno L-V, sugerir los horarios por defecto configurados
+  // Sugerir horarios según el patrón
   useEffect(() => {
     if (patternType === 'guardia24') {
       const gShift = shiftTypes.find(s => s.id === 'guardia24');
@@ -61,6 +62,9 @@ export default function CalendarView({ onCalendarUpdated }) {
       const sabShift = shiftTypes.find(s => s.id === 'sabado_alterno');
       setPatternStartTime(sabShift ? sabShift.horaInicio : '08:00');
       setPatternEndTime(sabShift ? sabShift.horaFin : '16:00');
+    } else if (patternType === 'ausencias') {
+      setPatternStartTime('00:00');
+      setPatternEndTime('00:00');
     }
   }, [patternType, lvShiftId]);
 
@@ -72,7 +76,6 @@ export default function CalendarView({ onCalendarUpdated }) {
     }
   }, [showDeleteModal, deleteStartDate, deleteEndDate, deleteOnlyAuto, logs]);
 
-  // Cambiar de mes
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11);
@@ -96,7 +99,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     setCurrentMonth(today.getMonth());
   };
 
-  // Abrir modal de edición para un día concreto
+  // Abrir modal para editar día individual
   const handleDayClick = (dayItem) => {
     setSelectedDay(dayItem);
     const existingLog = logs.find(l => l.fecha === dayItem.dateIso);
@@ -115,7 +118,6 @@ export default function CalendarView({ onCalendarUpdated }) {
     }
   };
 
-  // Al cambiar tipo de turno en modal de día individual, actualizar horarios
   const handleModalShiftTypeChange = (e) => {
     const sId = e.target.value;
     setModalShiftId(sId);
@@ -126,7 +128,6 @@ export default function CalendarView({ onCalendarUpdated }) {
     }
   };
 
-  // Guardar turno del día seleccionado
   const handleSaveDayShift = (e) => {
     e.preventDefault();
     if (!selectedDay) return;
@@ -164,7 +165,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     if (onCalendarUpdated) onCalendarUpdated();
   };
 
-  // Ejecutar generador de patrones aplicando los horarios de entrada/salida editables del modal
+  // Ejecutar generador de patrones (Turnos o Ausencias)
   const handleRunPatternGenerator = (e) => {
     e.preventDefault();
 
@@ -184,13 +185,15 @@ export default function CalendarView({ onCalendarUpdated }) {
         patternStartTime,
         patternEndTime
       );
+    } else if (patternType === 'ausencias') {
+      generateAusenciaPattern(patternStartDate, months, customEndDate, ausenciaTypeId);
     }
 
     setShowPatternModal(false);
     if (onCalendarUpdated) onCalendarUpdated();
   };
 
-  // Ejecutar borrado de cadencia con confirmación previa
+  // Borrar cadencia por rango
   const handleRunDeletePattern = (e) => {
     e.preventDefault();
     if (!previewInfo || previewInfo.totalEncontrados === 0) {
@@ -213,7 +216,6 @@ export default function CalendarView({ onCalendarUpdated }) {
 
   return (
     <div className="calendar-container">
-      {/* Controles de Navegación del Calendario */}
       <div className="calendar-header">
         <div className="calendar-title-box">
           <h2 className="calendar-month-title">
@@ -224,7 +226,7 @@ export default function CalendarView({ onCalendarUpdated }) {
 
         <div className="calendar-actions">
           <button className="pattern-btn" onClick={() => setShowPatternModal(true)}>
-            ⚡ Generar Patrón
+            ⚡ Generar Patrón / Ausencia
           </button>
           <button className="pattern-btn delete-cadence-btn" onClick={() => setShowDeleteModal(true)}>
             🗑️ Borrar Cadencia
@@ -236,7 +238,6 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       </div>
 
-      {/* Leyenda de Colores de Turnos */}
       <div className="calendar-legend">
         {shiftTypes.map(st => (
           <span key={st.id} className="legend-item">
@@ -246,7 +247,6 @@ export default function CalendarView({ onCalendarUpdated }) {
         ))}
       </div>
 
-      {/* Cuadrícula de 7 Columnas */}
       <div className="calendar-grid">
         {DAY_NAMES.map(dayName => (
           <div key={dayName} className="weekday-header">{dayName}</div>
@@ -293,13 +293,13 @@ export default function CalendarView({ onCalendarUpdated }) {
         <div className="modal-backdrop" onClick={() => setSelectedDay(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📅 Ajustar Turno: {formatDateSpanish(selectedDay.dateIso)}</h3>
+              <h3>📅 Ajustar Turno / Ausencia: {formatDateSpanish(selectedDay.dateIso)}</h3>
               <button className="modal-close" onClick={() => setSelectedDay(null)}>✕</button>
             </div>
             
             <form onSubmit={handleSaveDayShift} className="modal-form">
               <div className="form-group">
-                <label>Tipo de Turno:</label>
+                <label>Tipo de Turno / Ausencia:</label>
                 <select value={modalShiftId} onChange={handleModalShiftTypeChange}>
                   {shiftTypes.map(st => (
                     <option key={st.id} value={st.id}>{st.nombre}</option>
@@ -340,7 +340,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <label>Notas / Observaciones:</label>
                 <input 
                   type="text" 
-                  placeholder="Ej: Cambio de ruta, horas extra..." 
+                  placeholder="Ej: Cambio de ruta, justificante medico..." 
                   value={modalNotas}
                   onChange={e => setModalNotas(e.target.value)}
                 />
@@ -359,24 +359,38 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       )}
 
-      {/* MODAL 2: Generador de Patrones con Horarios Editables en Lote */}
+      {/* MODAL 2: Generador de Patrones / Ausencias */}
       {showPatternModal && (
         <div className="modal-backdrop" onClick={() => setShowPatternModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>⚡ Generar Patrón Rotativo</h3>
+              <h3>⚡ Generar Patrón Rotativo / Ausencia</h3>
               <button className="modal-close" onClick={() => setShowPatternModal(false)}>✕</button>
             </div>
 
             <form onSubmit={handleRunPatternGenerator} className="modal-form">
               <div className="form-group">
-                <label>Tipo de Patrón:</label>
+                <label>Categoría de Patrón:</label>
                 <select value={patternType} onChange={e => setPatternType(e.target.value)}>
                   <option value="guardia24">Guardia 24h + 3 Días de Descanso (Rotativo 24/72)</option>
                   <option value="lunes_viernes">Turno Lunes a Viernes Fijo (Mañana / Tarde / Noche)</option>
                   <option value="fin_semana_alterno">Fin de Semana Alterno (Horario Personalizado)</option>
+                  <option value="ausencias">🌴 Periodo de Ausencia (Vacaciones, Bajas, Moscosos)</option>
                 </select>
               </div>
+
+              {/* Si es Ausencia */}
+              {patternType === 'ausencias' && (
+                <div className="form-group">
+                  <label>Selecciona el tipo de ausencia:</label>
+                  <select value={ausenciaTypeId} onChange={e => setAusenciaTypeId(e.target.value)}>
+                    <option value="vacaciones">🌴 Vacaciones</option>
+                    <option value="baja_laboral">🏥 Baja Laboral / Médica</option>
+                    <option value="paternidad_maternidad">👶 Baja Paternidad / Maternidad</option>
+                    <option value="asuntos_propios">💼 Asuntos Propios / Moscoso</option>
+                  </select>
+                </div>
+              )}
 
               {/* Si es Turno Lunes a Viernes */}
               {patternType === 'lunes_viernes' && (
@@ -402,27 +416,29 @@ export default function CalendarView({ onCalendarUpdated }) {
                 </div>
               )}
 
-              {/* Campos Editables de Hora Entrada / Salida para TODO el patrón generado */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Hora Entrada para el patrón:</label>
-                  <input 
-                    type="time" 
-                    value={patternStartTime} 
-                    onChange={e => setPatternStartTime(e.target.value)} 
-                    required 
-                  />
+              {/* Campos Editables de Hora Entrada / Salida (solo si NO es ausencia) */}
+              {patternType !== 'ausencias' && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Hora Entrada para el patrón:</label>
+                    <input 
+                      type="time" 
+                      value={patternStartTime} 
+                      onChange={e => setPatternStartTime(e.target.value)} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Hora Salida para el patrón:</label>
+                    <input 
+                      type="time" 
+                      value={patternEndTime} 
+                      onChange={e => setPatternEndTime(e.target.value)} 
+                      required 
+                    />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Hora Salida para el patrón:</label>
-                  <input 
-                    type="time" 
-                    value={patternEndTime} 
-                    onChange={e => setPatternEndTime(e.target.value)} 
-                    required 
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Selector de Modo de Duración */}
               <div className="form-group">
@@ -460,6 +476,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                 <div className="form-group">
                   <label>Proyectar a cuántos meses vista:</label>
                   <select value={patternMonths} onChange={e => setPatternMonths(e.target.value)}>
+                    <option value={1}>1 Mes</option>
                     <option value={3}>3 Meses</option>
                     <option value={6}>6 Meses (Recomendado)</option>
                     <option value={12}>1 Año Completo</option>
@@ -467,7 +484,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                 </div>
               ) : (
                 <div className="form-group">
-                  <label>Fecha Fin del Patrón:</label>
+                  <label>Fecha Fin del Patrón / Ausencia:</label>
                   <input 
                     type="date" 
                     value={patternEndDate}
@@ -482,7 +499,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                   Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
-                  🚀 Generar Cuadrante
+                  🚀 Generar Cuadrante / Ausencia
                 </button>
               </div>
             </form>
@@ -501,7 +518,7 @@ export default function CalendarView({ onCalendarUpdated }) {
 
             <form onSubmit={handleRunDeletePattern} className="modal-form">
               <p className="modal-desc">
-                Elimina una rotación proyectada previamente cuando cambies de turno a mitad de año.
+                Elimina una rotación o periodo de ausencias proyectado previamente.
               </p>
 
               <div className="form-row">

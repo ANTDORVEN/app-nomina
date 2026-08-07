@@ -47,7 +47,7 @@ export const DEFAULT_SHIFT_TYPES = [
     horaInicio: '08:00',
     horaFin: '20:00',
     horasTeoricas: 12,
-    horasDescansoNoPagadas: 1, // 1h de descanso no remunerado
+    horasDescansoNoPagadas: 1,
     generaNocturnidad: false,
     color: '#0284c7'
   },
@@ -60,16 +60,6 @@ export const DEFAULT_SHIFT_TYPES = [
     horasDescansoNoPagadas: 0,
     generaNocturnidad: true,
     color: '#10b981'
-  },
-  {
-    id: 'patron_5x2',
-    nombre: 'Patrón 5x2 / 2x5',
-    horaInicio: '08:00',
-    horaFin: '16:00',
-    horasTeoricas: 8,
-    horasDescansoNoPagadas: 0,
-    generaNocturnidad: false,
-    color: '#06b6d4'
   },
   {
     id: 'sabado_alterno',
@@ -98,8 +88,42 @@ export const DEFAULT_SHIFT_TYPES = [
     horaFin: '00:00',
     horasTeoricas: 0,
     horasDescansoNoPagadas: 0,
+    esAusencia: true,
     generaNocturnidad: false,
     color: '#14b8a6'
+  },
+  {
+    id: 'baja_laboral',
+    nombre: 'Baja Laboral / Médica',
+    horaInicio: '00:00',
+    horaFin: '00:00',
+    horasTeoricas: 0,
+    horasDescansoNoPagadas: 0,
+    esAusencia: true,
+    generaNocturnidad: false,
+    color: '#ef4444'
+  },
+  {
+    id: 'paternidad_maternidad',
+    nombre: 'Baja Paternidad / Maternidad',
+    horaInicio: '00:00',
+    horaFin: '00:00',
+    horasTeoricas: 0,
+    horasDescansoNoPagadas: 0,
+    esAusencia: true,
+    generaNocturnidad: false,
+    color: '#805ad5'
+  },
+  {
+    id: 'asuntos_propios',
+    nombre: 'Asuntos Propios / Moscoso',
+    horaInicio: '00:00',
+    horaFin: '00:00',
+    horasTeoricas: 0,
+    horasDescansoNoPagadas: 0,
+    esAusencia: true,
+    generaNocturnidad: false,
+    color: '#d97706'
   },
   {
     id: 'libre',
