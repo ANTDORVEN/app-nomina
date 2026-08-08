@@ -23,7 +23,6 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
   }
 
   const shiftTypes = getShiftTypes();
-  const guardiaShift = shiftTypes.find(s => s.id === 'guardia24') || { id: 'guardia24', horasTeoricas: 24 };
   const libreShift = shiftTypes.find(s => s.id === 'libre') || { id: 'libre', horaInicio: '00:00', horaFin: '00:00', horasTeoricas: 0 };
 
   const horasGuardia = calculateWorkedHours(horaInicio, horaSalida) || 24;
@@ -41,7 +40,7 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
         horaEntradaReal: horaInicio,
         horaSalidaReal: horaSalida,
         horasTrabajadas: horasGuardia,
-        horasExtra: Math.max(0, horasGuardia - 24),
+        horasExtra: 0,
         esFestivo: false,
         esPatronAuto: true,
         notas: `Guardia 24h (${horaInicio}-${horaSalida}) (Patrón Rotativo)`
@@ -85,7 +84,6 @@ export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaF
   const shiftObj = shiftTypes.find(s => s.id === tipoTurnoId) || shiftTypes[0];
 
   const horasCalc = calculateWorkedHours(horaInicio, horaSalida);
-  const horasTeoricas = shiftObj.horasTeoricas || 8;
 
   let currDate = new Date(startDate);
 
@@ -100,7 +98,7 @@ export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaF
         horaEntradaReal: horaInicio,
         horaSalidaReal: horaSalida,
         horasTrabajadas: horasCalc,
-        horasExtra: Math.max(0, horasCalc - horasTeoricas),
+        horasExtra: 0,
         esFestivo: false,
         esPatronAuto: true,
         notas: `${shiftObj.nombre} (${horaInicio}-${horaSalida}) L-V (Patrón Rotativo)`
@@ -145,7 +143,7 @@ export function generateFinDeSemanaAlternoPattern(primerDiaFecha, numeroMeses = 
       horaEntradaReal: horaInicio,
       horaSalidaReal: horaSalida,
       horasTrabajadas: horasCalc,
-      horasExtra: Math.max(0, horasCalc - 8),
+      horasExtra: 0,
       esFestivo: diaSemanaElegido === 'domingo',
       esPatronAuto: true,
       notas: `${nombreEtiqueta} (${horaInicio}-${horaSalida}) (Patrón Rotativo)`
