@@ -1,5 +1,5 @@
 /**
- * defaultData.js - Valores por defecto ajustados a la nómina real del Convenio de Sevilla 2025 (Categoría TES, 5 años antigüedad).
+ * defaultData.js - Valores por defecto ajustados al Convenio de Sevilla 2025 (Categoría TES, 5 años antigüedad).
  */
 
 export const DEFAULT_CONFIG = {
@@ -11,10 +11,10 @@ export const DEFAULT_CONFIG = {
   // Concepto fijo mensual
   antiguedadMensual: 37.60,          // Antigüedad (37,60 €/mes para 5 años)
 
-  // Conceptos por hora
-  precioHoraOrdinaria: 12.36,        // J.Complement (Jornada Complementaria €/h presencial de exceso)
-  precioHoraFestiva: 21.00,          // Horas en días festivos (€/h)
-  precioHoraExtra: 21.63,            // Horas extraordinarias (€/h)
+  // Conceptos por hora excluyentes
+  precioHoraOrdinaria: 12.47,        // J.Complement (€/h exceso en día normal)
+  precioHoraExtra: 21.82,            // Horas Extraordinarias (€/h trabajadas en festivo)
+  precioHoraFestiva: 21.82,          // Horas Festivas (€/h)
   plusNocturnidadHora: 1.85,         // Plus Nocturnidad (€/h noche)
   
   fechaIngresoEmpresa: '2021-11-01', // Fecha de ingreso para recálculo de antigüedad

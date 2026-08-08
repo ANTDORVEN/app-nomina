@@ -21,11 +21,9 @@ export default function ResumenCard({ summary }) {
     totalHorasTrabajadas, 
     totalHorasPresenciales,
     totalHorasDescansoDescontadas,
-    totalHorasPresencialesExceso, 
-    totalHorasFestivas, 
-    totalHorasExtra, 
+    totalHorasJComplement, 
+    totalHorasFestivasExtra, 
     totalHorasNocturnas, 
-    totalDiasFestivos, 
     conceptosDiarios,
     tarifasAplicadas,
     desgloseImportes, 
@@ -36,9 +34,8 @@ export default function ResumenCard({ summary }) {
   const precioPlusDia = conceptosDiarios ? conceptosDiarios.precioPlusConvenioDia : 5.58;
   const precioProrrataDia = conceptosDiarios ? conceptosDiarios.precioProrrataPagaExtraDia : 8.24;
 
-  const precioJComplement = tarifasAplicadas ? tarifasAplicadas.precioHoraOrdinaria : 12.36;
-  const precioFestiva = tarifasAplicadas ? tarifasAplicadas.precioHoraFestiva : 21.00;
-  const precioExtra = tarifasAplicadas ? tarifasAplicadas.precioHoraExtra : 21.63;
+  const precioJComplement = tarifasAplicadas ? tarifasAplicadas.precioJComplement : 12.47;
+  const precioHorasExtra = tarifasAplicadas ? tarifasAplicadas.precioHorasExtra : 21.82;
   const precioNocturna = tarifasAplicadas ? tarifasAplicadas.plusNocturnidad : 1.85;
 
   return (
@@ -85,7 +82,7 @@ export default function ResumenCard({ summary }) {
         <div className="metric-item highlight-extra">
           <span className="metric-icon">➕</span>
           <div>
-            <span className="metric-value">{totalHorasPresencialesExceso} h</span>
+            <span className="metric-value">{totalHorasJComplement} h</span>
             <span className="metric-label">J.Complement</span>
           </div>
         </div>
@@ -125,24 +122,19 @@ export default function ResumenCard({ summary }) {
           </div>
         </div>
 
-        <h3 className="desglose-title" style={{ marginTop: '16px' }}>💰 2. Variables por Horas, Sábados & Pluses</h3>
+        <h3 className="desglose-title" style={{ marginTop: '16px' }}>💰 2. Variables por Horas & Pluses (Conceptos Excluyentes)</h3>
         <div className="desglose-list">
-          <div className="desglose-row">
-            <span>J.Complement / Excesos Presenciales ({totalHorasPresencialesExceso}h × {precioJComplement.toFixed(2)}€/h)</span>
-            <span className="concept-amount">+{desgloseImportes.jornadaComplementaria.toFixed(2)} €</span>
-          </div>
-
-          {totalHorasFestivas > 0 && (
+          {desgloseImportes.jornadaComplementaria > 0 && (
             <div className="desglose-row">
-              <span>Plus Festivo / Horas Festivas ({totalHorasFestivas}h × {precioFestiva.toFixed(2)}€/h)</span>
-              <span className="concept-amount holiday">+{desgloseImportes.festivos.toFixed(2)} €</span>
+              <span>J.Complement / Excesos Presenciales ({totalHorasJComplement}h × {precioJComplement.toFixed(2)}€/h)</span>
+              <span className="concept-amount">+{desgloseImportes.jornadaComplementaria.toFixed(2)} €</span>
             </div>
           )}
 
-          {totalHorasExtra > 0 && (
+          {desgloseImportes.horasExtraordinarias > 0 && (
             <div className="desglose-row">
-              <span>Horas Extraordinarias ({totalHorasExtra}h × {precioExtra.toFixed(2)}€/h)</span>
-              <span className="concept-amount extra">+{desgloseImportes.extra.toFixed(2)} €</span>
+              <span>Horas Extraordinarias en Festivo ({totalHorasFestivasExtra}h × {precioHorasExtra.toFixed(2)}€/h)</span>
+              <span className="concept-amount extra">+{desgloseImportes.horasExtraordinarias.toFixed(2)} €</span>
             </div>
           )}
 

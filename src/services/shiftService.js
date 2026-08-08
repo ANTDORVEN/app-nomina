@@ -34,6 +34,17 @@ export function getConfig() {
   let needsUpdate = false;
   const mergedConfig = { ...DEFAULT_CONFIG, ...storedConfig };
 
+  // Forzar actualización si las tarifas antiguas no coinciden con las corregidas (12.47 / 21.82)
+  if (storedConfig.precioHoraOrdinaria === 12.36) {
+    mergedConfig.precioHoraOrdinaria = 12.47;
+    needsUpdate = true;
+  }
+  if (storedConfig.precioHoraExtra === 21.63 || storedConfig.precioHoraFestiva === 21.00) {
+    mergedConfig.precioHoraExtra = 21.82;
+    mergedConfig.precioHoraFestiva = 21.82;
+    needsUpdate = true;
+  }
+
   Object.keys(DEFAULT_CONFIG).forEach(key => {
     if (storedConfig[key] === undefined) {
       needsUpdate = true;

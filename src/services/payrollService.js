@@ -1,15 +1,12 @@
 /**
- * payrollService.js - Servicio de cálculo de nómina adaptado al desglose real de Ambulancias Tenorio (ATH).
+ * payrollService.js - Servicio de cálculo de nómina adaptado al desglose oficial de Ambulancias Tenorio (ATH).
  * 
- * Conceptos del Desglose ATH:
- * - Salario Base: días liquidados del periodo × precio/día (ej: 18 días × 41,78€/día)
- * - Plus Convenio: días liquidados del periodo × precio/día (ej: 18 días × 5,58€/día)
- * - Prorrata Paga Extra: días liquidados del periodo × precio/día (ej: 18 días × 8,24€/día)
- * - Antigüedad: importe fijo del tramo actual (37,60€ para 5 años)
- * - J.Complement (Jornada Complementaria): horas presenciales de exceso × 12,36€/hora
- * - Plus Festivo: horas en días festivos × 21,00€/hora
- * - Plus Nocturnidad: horas nocturnas × 1,85€/hora
- * - Horas Extraordinarias: horas extra puras × 21,63€/hora
+ * Reglas de Exclusividad Estricta:
+ * 1. Días NORMALES (no festivos): Las horas de más que excedan la jornada estándar de 8h (o turnos de 12h/sábados)
+ *    van EXCLUSIVAMENTE a 'J.Complement / Excesos Presenciales' a 12,47 €/hora. NUNCA a Horas Extraordinarias.
+ * 2. Días FESTIVOS: TODAS las horas trabajadas en festivo van EXCLUSIVAMENTE a 'Horas Extraordinarias' a 21,82 €/hora.
+ *    NUNCA se cuentan también en J.Complement.
+ * 3. Ambas categorías son estrictamente mutuamente excluyentes (jamás se duplican ni solapan).
  */
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
@@ -31,9 +28,8 @@ export function calculatePayrollForPeriod(period) {
 
   let totalHorasPresenciales = 0;
   let totalHorasDescansoDescontadas = 0;
-  let totalHorasPresencialesExceso = 0;
-  let totalHorasFestivas = 0;
-  let totalHorasExtra = 0;
+  let totalHorasJComplement = 0; // Excesos en días normales no festivos (12,47 €/h)
+  let totalHorasFestivasExtra = 0; // Horas trabajadas en festivos (21,82 €/h)
   let totalHorasNocturnas = 0;
   let totalDiasFestivos = 0;
 
@@ -48,29 +44,29 @@ export function calculatePayrollForPeriod(period) {
     // Horas liquidadas reales descontando el descanso no retribuido
     const horasLiquidadasDia = Math.max(0, horasPresencialesReales - descansoNoPagado);
 
-    const isFestivoDay = log.esFestivo || (shiftType && (shiftType.id === 'festivo' || shiftType.id === 'domingo_alterno'));
-    const isSaturdayDay = shiftType && shiftType.id === 'sabado_alterno';
+    // Comprobar si el día es FESTIVO
+    const isFestivoDay = log.esFestivo === true || (shiftType && (shiftType.id === 'festivo' || shiftType.id === 'domingo_alterno' || shiftType.esFestivo === true));
 
     if (isFestivoDay) {
-      // Festivos trabajados: se pagan a tarifa festiva (21,00 €/h)
-      totalHorasFestivas += horasLiquidadasDia;
+      // 🟢 CASO FESTIVO: TODAS las horas del festivo se pagan a Horas Extraordinarias (21,82 €/h)
+      // NUNCA se suman a J.Complement
+      totalHorasFestivasExtra += horasLiquidadasDia;
       totalDiasFestivos += 1;
-    } else if (isSaturdayDay || log.tipoTurnoId === 'turno12') {
-      // Sábados / Turnos 12h: horas presenciales adicionales a tarifa J.Complement (12,36 €/h)
-      totalHorasPresencialesExceso += horasLiquidadasDia;
     } else {
-      // Turno regular (L-V): las primeras 8h están cubiertas por los conceptos por día.
-      // Si trabaja 9h en vez de 8h, esa 1h de exceso es J.Complement (12,36 €/h).
-      const excesoDia = Math.max(0, horasLiquidadasDia - 8);
-      totalHorasPresencialesExceso += excesoDia;
+      // 🔵 CASO DÍA NORMAL (No Festivo): Las horas que exceden la jornada van SOLO a J.Complement (12,47 €/h)
+      // NUNCA se suman a Horas Extraordinarias
+      const isSaturdayDay = shiftType && shiftType.id === 'sabado_alterno';
+      const isTurno12 = log.tipoTurnoId === 'turno12';
+
+      if (isSaturdayDay || isTurno12) {
+        totalHorasJComplement += horasLiquidadasDia;
+      } else {
+        const excesoDia = Math.max(0, horasLiquidadasDia - 8);
+        totalHorasJComplement += excesoDia;
+      }
     }
 
-    // Horas extra puras registradas explícitamente
-    if (log.horasExtra && Number(log.horasExtra) > 0) {
-      totalHorasExtra += Number(log.horasExtra);
-    }
-
-    // Horas de nocturnidad
+    // Horas de nocturnidad (acumulación de noche)
     if (log.horasNocturnas) {
       totalHorasNocturnas += Number(log.horasNocturnas);
     } else if (shiftType && shiftType.generaNocturnidad) {
@@ -86,10 +82,9 @@ export function calculatePayrollForPeriod(period) {
   // Antigüedad fija por tramo
   const antiguedadMensual = Number(config.antiguedadMensual) || 37.60;
 
-  // Tarifas por hora
-  const precioHoraOrdinaria = Number(config.precioHoraOrdinaria) || 12.36; // J.Complement
-  const precioHoraFestiva = Number(config.precioHoraFestiva) || 21.00;
-  const precioHoraExtra = Number(config.precioHoraExtra) || 21.63;
+  // Tarifas por hora corregidas
+  const precioJComplement = Number(config.precioHoraOrdinaria) || 12.47;
+  const precioHorasExtra = Number(config.precioHoraExtra) || 21.82;
   const plusNocturnidad = Number(config.plusNocturnidadHora) || 1.85;
 
   // Cálculo proporcional por días trabajados en el periodo
@@ -100,13 +95,12 @@ export function calculatePayrollForPeriod(period) {
 
   const totalBaseDias = importeSalarioBase + importePlusConvenio + importeProrrataPagas + importeAntiguedad;
 
-  // Importes variables por horas
-  const importeJornadaComplementaria = totalHorasPresencialesExceso * precioHoraOrdinaria;
-  const importeFestivos = totalHorasFestivas * precioHoraFestiva;
-  const importeExtra = totalHorasExtra * precioHoraExtra;
+  // Importes variables por horas excluyentes
+  const importeJComplement = totalHorasJComplement * precioJComplement;
+  const importeHorasExtra = totalHorasFestivasExtra * precioHorasExtra;
   const importeNocturnidad = totalHorasNocturnas * plusNocturnidad;
 
-  const estimacionBrutoTotal = totalBaseDias + importeJornadaComplementaria + importeFestivos + importeExtra + importeNocturnidad;
+  const estimacionBrutoTotal = totalBaseDias + importeJComplement + importeHorasExtra + importeNocturnidad;
 
   return {
     periodo: period,
@@ -115,9 +109,8 @@ export function calculatePayrollForPeriod(period) {
     totalHorasTrabajadas: totalHorasPresenciales - totalHorasDescansoDescontadas,
     totalHorasPresenciales,
     totalHorasDescansoDescontadas,
-    totalHorasPresencialesExceso,
-    totalHorasFestivas,
-    totalHorasExtra,
+    totalHorasJComplement,
+    totalHorasFestivasExtra,
     totalHorasNocturnas,
     totalDiasFestivos,
     conceptosDiarios: {
@@ -131,15 +124,13 @@ export function calculatePayrollForPeriod(period) {
       precioProrrataPagaExtraDia
     },
     tarifasAplicadas: {
-      precioHoraOrdinaria,
-      precioHoraFestiva,
-      precioHoraExtra,
+      precioJComplement,
+      precioHorasExtra,
       plusNocturnidad
     },
     desgloseImportes: {
-      jornadaComplementaria: Math.round(importeJornadaComplementaria * 100) / 100,
-      festivos: Math.round(importeFestivos * 100) / 100,
-      extra: Math.round(importeExtra * 100) / 100,
+      jornadaComplementaria: Math.round(importeJComplement * 100) / 100,
+      horasExtraordinarias: Math.round(importeHorasExtra * 100) / 100,
       nocturnidad: Math.round(importeNocturnidad * 100) / 100
     },
     estimacionBrutoTotal: Math.round(estimacionBrutoTotal * 100) / 100,
@@ -155,14 +146,13 @@ function getEmptyPayrollSummary() {
     totalHorasTrabajadas: 0,
     totalHorasPresenciales: 0,
     totalHorasDescansoDescontadas: 0,
-    totalHorasPresencialesExceso: 0,
-    totalHorasFestivas: 0,
-    totalHorasExtra: 0,
+    totalHorasJComplement: 0,
+    totalHorasFestivasExtra: 0,
     totalHorasNocturnas: 0,
     totalDiasFestivos: 0,
     conceptosDiarios: { salarioBase: 0, plusConvenio: 0, prorrataPagas: 0, antiguedad: 0, totalBaseDias: 0, precioSalarioBaseDia: 41.78, precioPlusConvenioDia: 5.58, precioProrrataPagaExtraDia: 8.24 },
-    tarifasAplicadas: { precioHoraOrdinaria: 12.36, precioHoraFestiva: 21.00, precioHoraExtra: 21.63, plusNocturnidad: 1.85 },
-    desgloseImportes: { jornadaComplementaria: 0, festivos: 0, extra: 0, nocturnidad: 0 },
+    tarifasAplicadas: { precioJComplement: 12.47, precioHorasExtra: 21.82, plusNocturnidad: 1.85 },
+    desgloseImportes: { jornadaComplementaria: 0, horasExtraordinarias: 0, nocturnidad: 0 },
     estimacionBrutoTotal: 0,
     logs: []
   };

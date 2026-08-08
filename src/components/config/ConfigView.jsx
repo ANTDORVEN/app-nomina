@@ -19,10 +19,9 @@ export default function ConfigView({ onConfigSaved }) {
   const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 37.60);
   const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2021-11-01');
 
-  // Tarifas por Hora
-  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria || 12.36);
-  const [precioFestiva, setPrecioFestiva] = useState(currentConfig.precioHoraFestiva || 21.00);
-  const [precioExtra, setPrecioExtra] = useState(currentConfig.precioHoraExtra || 21.63);
+  // Tarifas por Hora Excluyentes
+  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria || 12.47);
+  const [precioHorasExtra, setPrecioHorasExtra] = useState(currentConfig.precioHoraExtra || 21.82);
   const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora || 1.85);
 
   const [mensaje, setMensaje] = useState('');
@@ -48,15 +47,15 @@ export default function ConfigView({ onConfigSaved }) {
       antiguedadMensual: Number(antiguedad),
       fechaIngresoEmpresa: fechaIngreso,
       precioHoraOrdinaria: Number(precioJComplement),
-      precioHoraFestiva: Number(precioFestiva),
-      precioHoraExtra: Number(precioExtra),
+      precioHoraExtra: Number(precioHorasExtra),
+      precioHoraFestiva: Number(precioHorasExtra),
       plusNocturnidadHora: Number(plusNocturnidad)
     };
     saveConfig(updatedConfig);
 
     setStorageItem(STORAGE_KEYS.SHIFT_TYPES, shiftTypes);
 
-    setMensaje('¡Configuración de nómina ATH guardada correctamente!');
+    setMensaje('¡Configuración de tarifas ATH guardada correctamente!');
     if (onConfigSaved) onConfigSaved();
 
     setTimeout(() => setMensaje(''), 3500);
@@ -108,7 +107,7 @@ export default function ConfigView({ onConfigSaved }) {
     <div className="config-container">
       <h2 className="config-title">⚙️ Configuración Económica & Desglose ATH</h2>
       <p className="config-subtitle">
-        Ajusta tus precios por día trabajado (Salario Base, Plus Convenio, Prorrata Pagas) y tarifas horarias (J.Complement, Festivos).
+        Ajusta tus precios por día trabajado (Salario Base, Plus Convenio, Prorrata Pagas) y tarifas horarias (J.Complement 12,47€/h, Horas Extraordinarias/Festivo 21,82€/h).
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
@@ -178,11 +177,11 @@ export default function ConfigView({ onConfigSaved }) {
         </div>
 
         {/* Tarifas Variables de Hora */}
-        <h3 className="section-subtitle">💶 Tarifas Variables por Hora & Pluses</h3>
+        <h3 className="section-subtitle">💶 Tarifas Variables por Hora (Conceptos Excluyentes)</h3>
         
         <div className="form-row">
           <div className="form-group">
-            <label>J.Complement / Hora Presencial (€/h):</label>
+            <label>J.Complement / Excesos en Día Normal (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -193,29 +192,18 @@ export default function ConfigView({ onConfigSaved }) {
           </div>
 
           <div className="form-group">
-            <label>Hora Festiva (€/h):</label>
+            <label>Horas Extraordinarias / Días Festivos (€/h):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={precioFestiva} 
-              onChange={e => setPrecioFestiva(e.target.value)} 
+              value={precioHorasExtra} 
+              onChange={e => setPrecioHorasExtra(e.target.value)} 
               required 
             />
           </div>
         </div>
 
         <div className="form-row">
-          <div className="form-group">
-            <label>Hora Extraordinaria (€/h):</label>
-            <input 
-              type="number" 
-              step="0.01" 
-              value={precioExtra} 
-              onChange={e => setPrecioExtra(e.target.value)} 
-              required 
-            />
-          </div>
-
           <div className="form-group">
             <label>Plus Nocturnidad (€/h noche):</label>
             <input 
