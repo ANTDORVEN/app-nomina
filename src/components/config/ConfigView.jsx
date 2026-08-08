@@ -4,7 +4,7 @@ import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import './ConfigView.css';
 
 /**
- * ConfigView.jsx - Ajuste de precios por día (Salario Base, Plus Convenio, Prorrata Pagas), Antigüedad y Tarifas por Hora.
+ * ConfigView.jsx - Ajuste de precios por día, antigüedad, tarifas horarias y copias de seguridad con Web Share API y visor JSON manual.
  */
 export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
@@ -25,6 +25,11 @@ export default function ConfigView({ onConfigSaved }) {
   const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora || 1.85);
 
   const [mensaje, setMensaje] = useState('');
+
+  // Estado para el Visor / Copiador Manual de JSON
+  const [showJsonModal, setShowJsonModal] = useState(false);
+  const [jsonText, setJsonText] = useState('');
+  const [copyFeedback, setCopyFeedback] = useState('');
 
   const handleShiftTypeTimeChange = (id, field, value) => {
     const updated = shiftTypes.map(st => {
@@ -61,26 +66,97 @@ export default function ConfigView({ onConfigSaved }) {
     setTimeout(() => setMensaje(''), 3500);
   };
 
-  // Exportar copia de seguridad en JSON
-  const handleExportBackup = () => {
-    const backupData = {
+  // Genera el objeto completo de copia de seguridad
+  const getBackupDataObject = () => {
+    return {
       config: getConfig(),
       periods: getPayrollPeriods(),
       shiftTypes: getShiftTypes(),
       timeLogs: getAllTimeLogs(),
       exportedAt: new Date().toISOString()
     };
-
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `tes_nomina_backup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
   };
 
-  // Importar copia de seguridad
+  // 1. Exportar copia de seguridad en JSON (Con Web Share API para móviles iOS / Safari)
+  const handleExportBackup = async () => {
+    const backupData = getBackupDataObject();
+    const jsonString = JSON.stringify(backupData, null, 2);
+    const fileName = `tes_nomina_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+    // A. Intentar Web Share API si está disponible en móviles (iOS Safari / Chrome Android)
+    try {
+      const file = new File([jsonString], fileName, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Copia de Seguridad TES Nómina',
+          text: 'Copia de seguridad de turnos y nómina TES ATH'
+        });
+        return;
+      }
+    } catch (shareErr) {
+      if (shareErr.name === 'AbortError') return; // Usuario canceló el menú compartir
+    }
+
+    // B. Descarga por Blob (para PC y navegadores de escritorio)
+    try {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (err) {
+      // Si la descarga automática falla, abrir directamente el modal manual
+      handleOpenJsonModal();
+    }
+  };
+
+  // 2. Abrir Modal para Ver / Copiar JSON Manualmente
+  const handleOpenJsonModal = () => {
+    const backupData = getBackupDataObject();
+    setJsonText(JSON.stringify(backupData, null, 2));
+    setCopyFeedback('');
+    setShowJsonModal(true);
+  };
+
+  // Copiar al portapapeles con fallback
+  const handleCopyToClipboard = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(jsonText);
+      } else {
+        // Fallback para navegadores antiguos
+        const textArea = document.getElementById('json-manual-textarea');
+        if (textArea) {
+          textArea.select();
+          document.execCommand('copy');
+        }
+      }
+      setCopyFeedback('¡Copiado al portapapeles con éxito! ✅');
+      setTimeout(() => setCopyFeedback(''), 4000);
+    } catch (err) {
+      setCopyFeedback('Selecciona todo el texto de abajo y pulsa Copiar.');
+    }
+  };
+
+  // Seleccionar todo el texto del textarea
+  const handleSelectAllText = () => {
+    const textArea = document.getElementById('json-manual-textarea');
+    if (textArea) {
+      textArea.focus();
+      textArea.select();
+    }
+  };
+
+  // Importar copia de seguridad desde un archivo o texto JSON
   const handleImportBackup = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -89,18 +165,35 @@ export default function ConfigView({ onConfigSaved }) {
     reader.onload = (event) => {
       try {
         const imported = JSON.parse(event.target.result);
-        if (imported.config) setStorageItem(STORAGE_KEYS.CONFIG, imported.config);
-        if (imported.periods) setStorageItem(STORAGE_KEYS.PERIODS, imported.periods);
-        if (imported.shiftTypes) setStorageItem(STORAGE_KEYS.SHIFT_TYPES, imported.shiftTypes);
-        if (imported.timeLogs) setStorageItem(STORAGE_KEYS.TIME_LOGS, imported.timeLogs);
-
-        alert('¡Copia de seguridad restaurada con éxito!');
-        window.location.reload();
+        applyImportedData(imported);
       } catch (err) {
         alert('Error al leer el archivo JSON de copia de seguridad.');
       }
     };
     reader.readAsText(file);
+  };
+
+  // Importar pegando texto JSON manualmente
+  const handleImportJsonFromText = () => {
+    const userText = prompt("Pega aquí el contenido JSON de tu copia de seguridad:");
+    if (!userText || !userText.trim()) return;
+
+    try {
+      const imported = JSON.parse(userText.trim());
+      applyImportedData(imported);
+    } catch (err) {
+      alert("El texto introducido no es un JSON válido.");
+    }
+  };
+
+  const applyImportedData = (imported) => {
+    if (imported.config) setStorageItem(STORAGE_KEYS.CONFIG, imported.config);
+    if (imported.periods) setStorageItem(STORAGE_KEYS.PERIODS, imported.periods);
+    if (imported.shiftTypes) setStorageItem(STORAGE_KEYS.SHIFT_TYPES, imported.shiftTypes);
+    if (imported.timeLogs) setStorageItem(STORAGE_KEYS.TIME_LOGS, imported.timeLogs);
+
+    alert('¡Copia de seguridad restaurada con éxito!');
+    window.location.reload();
   };
 
   return (
@@ -272,20 +365,73 @@ export default function ConfigView({ onConfigSaved }) {
       <div className="backup-section">
         <h3 className="backup-title">📦 Copia de Seguridad y Respaldos</h3>
         <p className="backup-desc">
-          Exporta tus fichajes y turnos a un archivo JSON para tenerlos a salvo o pasarlos a otro dispositivo.
+          Exporta tus fichajes y turnos a un archivo JSON o copia el texto directamente para guardarlo en tu móvil.
         </p>
 
         <div className="backup-buttons">
           <button type="button" className="btn-backup-export" onClick={handleExportBackup}>
-            ⬇️ Exportar Copia de Seguridad (JSON)
+            ⬇️ Exportar Copia (Descarga / Compartir)
+          </button>
+
+          <button type="button" className="btn-backup-copy" onClick={handleOpenJsonModal}>
+            📋 Ver / Copiar JSON Manualmente
           </button>
 
           <label className="btn-backup-import">
-            ⬆️ Importar Copia de Seguridad
+            ⬆️ Importar de Archivo
             <input type="file" accept=".json" onChange={handleImportBackup} style={{ display: 'none' }} />
           </label>
+
+          <button type="button" className="btn-backup-import-text" onClick={handleImportJsonFromText}>
+            📝 Pegar JSON Manualmente
+          </button>
         </div>
       </div>
+
+      {/* MODAL RESPALDO: Visor / Copiador Manual de JSON */}
+      {showJsonModal && (
+        <div className="modal-backdrop" onClick={() => setShowJsonModal(false)}>
+          <div className="modal-content json-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>📋 Copia de Seguridad (JSON)</h3>
+              <button className="modal-close" onClick={() => setShowJsonModal(false)}>✕</button>
+            </div>
+
+            <p className="modal-desc">
+              Si estás en un móvil iOS (iPhone) y la descarga falla, pulsa <strong>Copiar JSON</strong> o selecciona el texto de abajo para pegarlo en Notas.
+            </p>
+
+            {copyFeedback && <div className="alert-success copy-alert">{copyFeedback}</div>}
+
+            <div className="json-modal-actions">
+              <button type="button" className="btn-primary" onClick={handleCopyToClipboard}>
+                📋 Copiar JSON al Portapapeles
+              </button>
+
+              <button type="button" className="btn-secondary" onClick={handleSelectAllText}>
+                📄 Seleccionar Todo
+              </button>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '10px' }}>
+              <textarea 
+                id="json-manual-textarea"
+                className="json-textarea"
+                readOnly
+                value={jsonText}
+                rows={12}
+                onClick={handleSelectAllText}
+              />
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '12px' }}>
+              <button type="button" className="btn-secondary" onClick={() => setShowJsonModal(false)}>
+                ✕ Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
