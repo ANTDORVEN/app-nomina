@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getShiftTypes, saveTimeLog, getPeriodForDate } from '../../services/shiftService.js';
-import { formatDateToISO, calculateWorkedHours, formatDateSpanish } from '../../utils/dateUtils.js';
+import { formatDateToISO, calculateWorkedHours, formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import './FichajeForm.css';
 
 /**
- * FichajeForm.jsx - Formulario optimizado para fichaje rápido desde el móvil.
+ * FichajeForm.jsx - Formulario optimizado para fichaje rápido con resumen visual en formato 'Xh Ymin'.
  */
 export default function FichajeForm({ onLogSaved }) {
   const shiftTypes = getShiftTypes();
@@ -104,7 +104,7 @@ export default function FichajeForm({ onLogSaved }) {
           <select id="tipoTurno" value={tipoTurnoId} onChange={handleShiftTypeChange}>
             {shiftTypes.map(shift => (
               <option key={shift.id} value={shift.id}>
-                {shift.nombre} ({shift.horasTeoricas}h)
+                {shift.nombre} ({formatHoursToHHMM(shift.horasTeoricas)})
               </option>
             ))}
           </select>
@@ -137,11 +137,11 @@ export default function FichajeForm({ onLogSaved }) {
         <div className="live-calculation-box">
           <div className="calc-item">
             <span className="calc-label">Horas Totales:</span>
-            <span className="calc-value highlight">{horasTrabajadasCalculadas} h</span>
+            <span className="calc-value highlight">{formatHoursToHHMM(horasTrabajadasCalculadas)}</span>
           </div>
           <div className="calc-item">
             <span className="calc-label">Horas Extra:</span>
-            <span className="calc-value extra">{totalHorasExtra} h</span>
+            <span className="calc-value extra">{formatHoursToHHMM(totalHorasExtra)}</span>
           </div>
         </div>
 

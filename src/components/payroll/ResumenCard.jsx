@@ -1,9 +1,9 @@
 import React from 'react';
-import { formatDateSpanish } from '../../utils/dateUtils.js';
+import { formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import './ResumenCard.css';
 
 /**
- * ResumenCard.jsx - Tarjeta estilo panel financiero ajustada al desglose oficial ATH (Convenio Sevilla).
+ * ResumenCard.jsx - Tarjeta estilo panel financiero con horas formateadas visualmente en 'Xh Ymin'.
  */
 export default function ResumenCard({ summary }) {
   if (!summary || !summary.periodo) {
@@ -61,7 +61,7 @@ export default function ResumenCard({ summary }) {
         <span className="bruto-subtext">*Calculado proporcionalmente a {diasLiquidables} días liquidados en el período</span>
       </div>
 
-      {/* Rejilla de Indicadores de Horas */}
+      {/* Rejilla de Indicadores de Horas en Formato Xh Ymin */}
       <div className="metrics-grid">
         <div className="metric-item">
           <span className="metric-icon">📅</span>
@@ -74,7 +74,7 @@ export default function ResumenCard({ summary }) {
         <div className="metric-item">
           <span className="metric-icon">⏱️</span>
           <div>
-            <span className="metric-value">{totalHorasTrabajadas} h</span>
+            <span className="metric-value">{formatHoursToHHMM(totalHorasTrabajadas)}</span>
             <span className="metric-label">Horas Liquidadas</span>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function ResumenCard({ summary }) {
         <div className="metric-item highlight-extra">
           <span className="metric-icon">➕</span>
           <div>
-            <span className="metric-value">{totalHorasJComplement} h</span>
+            <span className="metric-value">{formatHoursToHHMM(totalHorasJComplement)}</span>
             <span className="metric-label">J.Complement</span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function ResumenCard({ summary }) {
         <div className="metric-item highlight-noche">
           <span className="metric-icon">🌙</span>
           <div>
-            <span className="metric-value">{totalHorasNocturnas} h</span>
+            <span className="metric-value">{formatHoursToHHMM(totalHorasNocturnas)}</span>
             <span className="metric-label">Nocturnidad</span>
           </div>
         </div>
@@ -126,28 +126,28 @@ export default function ResumenCard({ summary }) {
         <div className="desglose-list">
           {desgloseImportes.jornadaComplementaria > 0 && (
             <div className="desglose-row">
-              <span>J.Complement / Excesos Presenciales ({totalHorasJComplement}h × {precioJComplement.toFixed(2)}€/h)</span>
+              <span>J.Complement / Excesos Presenciales ({formatHoursToHHMM(totalHorasJComplement)} × {precioJComplement.toFixed(2)}€/h)</span>
               <span className="concept-amount">+{desgloseImportes.jornadaComplementaria.toFixed(2)} €</span>
             </div>
           )}
 
           {desgloseImportes.horasExtraordinarias > 0 && (
             <div className="desglose-row">
-              <span>Horas Extraordinarias en Festivo ({totalHorasFestivasExtra}h × {precioHorasExtra.toFixed(2)}€/h)</span>
+              <span>Horas Extraordinarias en Festivo ({formatHoursToHHMM(totalHorasFestivasExtra)} × {precioHorasExtra.toFixed(2)}€/h)</span>
               <span className="concept-amount extra">+{desgloseImportes.horasExtraordinarias.toFixed(2)} €</span>
             </div>
           )}
 
           {totalHorasNocturnas > 0 && (
             <div className="desglose-row">
-              <span>Plus Nocturnidad ({totalHorasNocturnas}h × {precioNocturna.toFixed(2)}€/h)</span>
+              <span>Plus Nocturnidad ({formatHoursToHHMM(totalHorasNocturnas)} × {precioNocturna.toFixed(2)}€/h)</span>
               <span className="concept-amount night">+{desgloseImportes.nocturnidad.toFixed(2)} €</span>
             </div>
           )}
 
           {totalHorasDescansoDescontadas > 0 && (
             <div className="desglose-row break-discount-row">
-              <span>☕ Descanso no remunerado ({totalHorasDescansoDescontadas}h en turnos 12h)</span>
+              <span>☕ Descanso no remunerado ({formatHoursToHHMM(totalHorasDescansoDescontadas)} en turnos 12h)</span>
               <span className="concept-amount discount">-0.00 € (No abonable)</span>
             </div>
           )}

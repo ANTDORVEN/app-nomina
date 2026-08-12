@@ -1,10 +1,10 @@
 import React from 'react';
-import { formatDateSpanish } from '../../utils/dateUtils.js';
+import { formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import { getShiftTypes, deleteTimeLog } from '../../services/shiftService.js';
 import './FichajesList.css';
 
 /**
- * FichajesList.jsx - Listado de turnos fichados en el período seleccionado.
+ * FichajesList.jsx - Listado de turnos fichados en el período seleccionado con formato visual 'Xh Ymin'.
  */
 export default function FichajesList({ logs, onDeleteLog }) {
   const shiftTypes = getShiftTypes();
@@ -48,11 +48,11 @@ export default function FichajesList({ logs, onDeleteLog }) {
               <div className="log-card-body">
                 <div className="log-hours">
                   <span>⏱️ {log.horaEntradaReal || '08:00'} - {log.horaSalidaReal || '16:00'}</span>
-                  <strong>{log.horasTrabajadas} h totales</strong>
+                  <strong>{formatHoursToHHMM(log.horasTrabajadas)} totales</strong>
                 </div>
 
                 {log.horasExtra > 0 && (
-                  <span className="tag extra-tag">+{log.horasExtra}h Extra</span>
+                  <span className="tag extra-tag">+{formatHoursToHHMM(log.horasExtra)} Extra</span>
                 )}
                 {log.esFestivo && (
                   <span className="tag festivo-tag">Festivo</span>

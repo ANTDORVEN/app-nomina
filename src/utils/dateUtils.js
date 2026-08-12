@@ -5,6 +5,7 @@
  * - Uso de Objetos Date nativos de JavaScript.
  * - Formateo ISO 8601 (YYYY-MM-DD) para almacenamiento limpio.
  * - Cálculo de diferencia de horas considerando cambios de día (ej: turnos nocturnos de 22:00 a 06:00).
+ * - Formateo visual de horas decimales a texto 'Xh Ymin' (ej: 8.833 -> "8h 50min").
  */
 
 /**
@@ -69,7 +70,30 @@ export function calculateWorkedHours(startTime, endTime) {
   }
 
   const diffMinutes = endTotalMinutes - startTotalMinutes;
-  return Math.round((diffMinutes / 60) * 100) / 100; // Redondeo a 2 decimales
+  return Math.round((diffMinutes / 60) * 100) / 100; // Redondeo a 2 decimales para cálculos exactos
+}
+
+/**
+ * Formatea un número de horas decimales a texto legible 'Xh Ymin' (ej: 8.833 -> "8h 50min", 8.5 -> "8h 30min", 8 -> "8h")
+ * @param {number|string} decimalHours 
+ * @returns {string} Texto formateado
+ */
+export function formatHoursToHHMM(decimalHours) {
+  const num = Number(decimalHours);
+  if (isNaN(num) || num <= 0) return '0h';
+
+  const totalMinutes = Math.round(num * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}min`;
+  }
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${minutes}min`;
 }
 
 /**

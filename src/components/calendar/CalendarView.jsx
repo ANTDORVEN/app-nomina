@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { MONTH_NAMES, DAY_NAMES, getMonthDaysGrid } from '../../utils/calendarUtils.js';
 import { getAllTimeLogs, getShiftTypes, saveTimeLog, deleteTimeLog } from '../../services/shiftService.js';
 import { generateGuardias24hPattern, generateLunesViernesPattern, generateFinDeSemanaAlternoPattern, generateAusenciaPattern, previewDeletePatternInRange, deletePatternInRange } from '../../services/patternService.js';
-import { formatDateSpanish, calculateWorkedHours } from '../../utils/dateUtils.js';
+import { formatDateSpanish, calculateWorkedHours, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import './CalendarView.css';
 
 /**
- * CalendarView.jsx - Vista de cuadrante con solución al bug del horario en generador de patrones y responsive móvil.
+ * CalendarView.jsx - Vista de cuadrante con formato visual de horas 'Xh Ymin' en insignias de celdas.
  */
 export default function CalendarView({ onCalendarUpdated }) {
   const today = new Date();
@@ -294,7 +294,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                 >
                   <span className="shift-name-short">{shiftObj.nombreCorto || shiftObj.nombre}</span>
                   {logForDay.horasTrabajadas > 0 && (
-                    <span className="shift-hours">{logForDay.horasTrabajadas}h</span>
+                    <span className="shift-hours">{formatHoursToHHMM(logForDay.horasTrabajadas)}</span>
                   )}
                 </div>
               )}
