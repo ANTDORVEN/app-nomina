@@ -2,8 +2,16 @@
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 14px;
   box-shadow: var(--shadow-md);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .fichaje-card {
+    padding: 20px;
+  }
 }
 
 .fichaje-title {
@@ -21,6 +29,8 @@
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
   margin-bottom: 16px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .periodo-badge.warning {
@@ -38,18 +48,24 @@
   margin-bottom: 16px;
   font-weight: 600;
   font-size: 0.9rem;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .fichaje-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group label {
@@ -60,6 +76,8 @@
 
 .form-group input,
 .form-group select {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--bg-app);
   border: 1px solid var(--border-color);
   color: var(--text-main);
@@ -76,10 +94,23 @@
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
+/* Apilado vertical en móviles (<520px) para prevenir desbordamientos y mantener alineación exacta */
 .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 520px) {
+  .form-row {
+    flex-direction: row;
+  }
+
+  .form-row .form-group {
+    flex: 1;
+  }
 }
 
 .live-calculation-box {
@@ -90,6 +121,8 @@
   display: flex;
   justify-content: space-around;
   margin-top: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .calc-item {
@@ -144,6 +177,8 @@
   transition: all 0.2s ease;
   box-shadow: var(--shadow-glow);
   margin-top: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .submit-btn:hover {
