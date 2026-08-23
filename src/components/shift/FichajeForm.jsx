@@ -4,7 +4,7 @@ import { formatDateToISO, calculateWorkedHours, formatDateSpanish, formatHoursTo
 import './FichajeForm.css';
 
 /**
- * FichajeForm.jsx - Formulario optimizado para fichaje rápido con resumen visual en formato 'Xh Ymin'.
+ * FichajeForm.jsx - Formulario de fichaje con notificación visual tipo Toast '✅ Fichaje guardado'.
  */
 export default function FichajeForm({ onLogSaved }) {
   const shiftTypes = getShiftTypes();
@@ -60,17 +60,25 @@ export default function FichajeForm({ onLogSaved }) {
     };
 
     saveTimeLog(logData);
-    setMensajeExito(`¡Fichaje del ${formatDateSpanish(fecha)} guardado correctamente!`);
+    setMensajeExito('✅ Fichaje guardado');
 
     if (onLogSaved) onLogSaved(logData);
 
+    // Ocultar la notificación tipo Toast automáticamente después de 2.5 segundos
     setTimeout(() => {
       setMensajeExito('');
-    }, 3500);
+    }, 2500);
   };
 
   return (
     <div className="fichaje-card">
+      {/* Toast / Notificación Flotante breve y no bloqueante */}
+      {mensajeExito && (
+        <div className="toast-notification">
+          <span>{mensajeExito}</span>
+        </div>
+      )}
+
       <h2 className="fichaje-title">⚡ Registrar Fichaje / Jornada</h2>
 
       {periodoAsignado ? (
