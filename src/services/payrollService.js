@@ -3,10 +3,11 @@
  * 
  * Estructura de Cálculo de Cada Nómina:
  * 1. BLOQUE DE CONCEPTOS FIJOS (Mes Natural: 01/MM a 31/MM):
- *    - Salario Base (días liquidados en mes natural × 41,78 €/día)
- *    - Plus Convenio (días liquidados en mes natural × 5,58 €/día)
- *    - Prorrata Paga Extra (días liquidados en mes natural × 8,24 €/día)
- *    - Antigüedad (62,66 € base mensual 5 años × [días liquidados / 30])
+ *    - Días Liquidables Mes Natural = Días totales del mes (28/29/30/31) - Días de Ausencia (Vacaciones, Baja, Paternidad, Moscosos).
+ *    - Salario Base (Días liquidados mes natural × 41,78 €/día)
+ *    - Plus Convenio (Días liquidados mes natural × 5,58 €/día)
+ *    - Prorrata Paga Extra (Días liquidados mes natural × 8,24 €/día)
+ *    - Antigüedad (62,66 € base mensual 5 años × [Días liquidados mes natural / 30])
  * 
  * 2. BLOQUE DE CONCEPTOS VARIABLES (Rango Tabla ATH: ej. 15/07 a 13/08):
  *    - J.Complement (excesos presenciales en días laborables/sábados × 12,36 €/hora)
@@ -37,8 +38,21 @@ export function calculatePayrollForPeriod(period) {
     isDateInPeriod(log.fecha, fechaInicioMesNatural, fechaFinMesNatural)
   );
 
-  // Días únicos de fichaje registrados en el mes natural
-  const diasLiquidablesMesNatural = new Set(naturalMonthLogs.map(l => l.fecha)).size;
+  // Identificar días con tipo de AUSENCIA (esAusencia: true, Vacaciones, Bajas, Moscosos)
+  const ausenciasMonthLogs = naturalMonthLogs.filter(log => {
+    const shiftType = shiftTypes.find(t => t.id === log.tipoTurnoId);
+    return log.esAusencia === true || 
+           (shiftType && (shiftType.esAusencia === true || 
+                          shiftType.id === 'vacaciones' || 
+                          shiftType.id === 'baja_laboral' || 
+                          shiftType.id === 'paternidad_maternidad' || 
+                          shiftType.id === 'asuntos_propios'));
+  });
+
+  const diasAusenciaMesNatural = new Set(ausenciasMonthLogs.map(l => l.fecha)).size;
+
+  // Días liquidables del Mes Natural = Días totales del mes (28/29/30/31) - Días de Ausencia
+  const diasLiquidablesMesNatural = Math.max(0, totalDiasMes - diasAusenciaMesNatural);
 
   const precioSalarioBaseDia = Number(config.precioSalarioBaseDia) || 41.78;
   const precioPlusConvenioDia = Number(config.precioPlusConvenioDia) || 5.58;
@@ -49,7 +63,7 @@ export function calculatePayrollForPeriod(period) {
   const importePlusConvenio = diasLiquidablesMesNatural * precioPlusConvenioDia;
   const importeProrrataPagas = diasLiquidablesMesNatural * precioProrrataPagaExtraDia;
 
-  // Antigüedad prorrateada por días del mes natural (62,66€ × [días / 30])
+  // Antigüedad prorrateada por días liquidables del mes natural (62,66€ × [días liquidables / 30])
   const importeAntiguedad = antiguedadMensualBase * (diasLiquidablesMesNatural / 30);
 
   const subtotalFijoMesNatural = importeSalarioBase + importePlusConvenio + importeProrrataPagas + importeAntiguedad;
@@ -84,7 +98,7 @@ export function calculatePayrollForPeriod(period) {
     const isFestivoDay = log.esFestivo === true || (shiftType && (shiftType.id === 'festivo' || shiftType.id === 'domingo_alterno' || shiftType.esFestivo === true));
 
     if (isFestivoDay) {
-      // 🟢 CASO FESTIVO: Horas Extraordinarias / Festivos (21,63 €/h)
+      // 🟢 CASO FESTIVO: Horas Extraordinarias / Festivas (21,63 €/h)
       totalHorasFestivasExtra += horasLiquidadasDia;
       totalDiasFestivos += 1;
     } else {
@@ -108,7 +122,7 @@ export function calculatePayrollForPeriod(period) {
     }
   });
 
-  // Tarifas variables por hora corregidas
+  // Tarifas variables por hora
   const precioJComplement = Number(config.precioHoraOrdinaria) || 12.36;
   const precioHorasExtra = Number(config.precioHoraExtra) || 21.63;
   const plusNocturnidad = Number(config.plusNocturnidadHora) || 1.85;
@@ -131,6 +145,7 @@ export function calculatePayrollForPeriod(period) {
       fechaFin: fechaFinMesNatural,
       nombreMes: nombreMesNatural,
       totalDiasMes,
+      diasAusencia: diasAusenciaMesNatural,
       diasLiquidables: diasLiquidablesMesNatural,
       logsCount: naturalMonthLogs.length
     },
@@ -142,6 +157,7 @@ export function calculatePayrollForPeriod(period) {
     },
     fichajesContabilizados: periodLogs.length,
     diasLiquidables: diasLiquidablesMesNatural,
+    diasAusenciaMesNatural,
     totalHorasTrabajadas: totalHorasPresenciales - totalHorasDescansoDescontadas,
     totalHorasPresenciales,
     totalHorasDescansoDescontadas,
@@ -180,10 +196,11 @@ export function calculatePayrollForPeriod(period) {
 function getEmptyPayrollSummary() {
   return {
     periodo: null,
-    mesNatural: { fechaInicio: '', fechaFin: '', nombreMes: '', totalDiasMes: 30, diasLiquidables: 0, logsCount: 0 },
+    mesNatural: { fechaInicio: '', fechaFin: '', nombreMes: '', totalDiasMes: 30, diasAusencia: 0, diasLiquidables: 0, logsCount: 0 },
     periodoATH: { fechaInicio: '', fechaFin: '', diasLiquidables: 0, logsCount: 0 },
     fichajesContabilizados: 0,
     diasLiquidables: 0,
+    diasAusenciaMesNatural: 0,
     totalHorasTrabajadas: 0,
     totalHorasPresenciales: 0,
     totalHorasDescansoDescontadas: 0,
