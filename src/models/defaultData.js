@@ -3,18 +3,18 @@
  */
 
 export const DEFAULT_CONFIG = {
-  // Conceptos calculados por día trabajado/liquidable
+  // Conceptos fijos calculados por día del mes natural (01 a 31 de cada mes)
   precioSalarioBaseDia: 41.78,       // Salario Base (€/día)
   precioPlusConvenioDia: 5.58,       // Plus Convenio (€/día)
   precioProrrataPagaExtraDia: 8.24,  // Prorrata Paga Extra (€/día)
 
-  // Concepto fijo mensual
-  antiguedadMensual: 37.60,          // Antigüedad (37,60 €/mes para 5 años)
+  // Base completa mensual de Antigüedad (Tramo 5 años)
+  antiguedadMensual: 62.66,          // Base mensual completa (62,66 €/mes para 5 años, prorrateada por días del mes natural)
 
-  // Conceptos por hora excluyentes
-  precioHoraOrdinaria: 12.47,        // J.Complement (€/h exceso en día normal)
-  precioHoraExtra: 21.82,            // Horas Extraordinarias (€/h trabajadas en festivo)
-  precioHoraFestiva: 21.82,          // Horas Festivas (€/h)
+  // Conceptos variables calculados sobre el Rango de la Tabla ATH
+  precioHoraOrdinaria: 12.36,        // J.Complement (€/h exceso presencial en día laborable)
+  precioHoraExtra: 21.63,            // Horas Extraordinarias / Festivas (€/h trabajadas en festivo)
+  precioHoraFestiva: 21.63,          // Horas Festivas (€/h)
   plusNocturnidadHora: 1.85,         // Plus Nocturnidad (€/h noche)
   
   fechaIngresoEmpresa: '2021-11-01', // Fecha de ingreso para recálculo de antigüedad

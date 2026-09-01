@@ -4,7 +4,7 @@ import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import './ConfigView.css';
 
 /**
- * ConfigView.jsx - Ajuste de precios por día, antigüedad, tarifas horarias y copias de seguridad con Web Share API y visor JSON manual.
+ * ConfigView.jsx - Ajuste de precios por día, antigüedad (base completa 62,66€ 5 años), tarifas horarias (12,36€ / 21,63€).
  */
 export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
@@ -15,13 +15,13 @@ export default function ConfigView({ onConfigSaved }) {
   const [plusConvenioDia, setPlusConvenioDia] = useState(currentConfig.precioPlusConvenioDia || 5.58);
   const [prorrataPagasDia, setProrrataPagasDia] = useState(currentConfig.precioProrrataPagaExtraDia || 8.24);
 
-  // Antigüedad (Tramo Fijo)
-  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 37.60);
+  // Antigüedad (Base Completa Mensual)
+  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 62.66);
   const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2021-11-01');
 
   // Tarifas por Hora Excluyentes
-  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria || 12.47);
-  const [precioHorasExtra, setPrecioHorasExtra] = useState(currentConfig.precioHoraExtra || 21.82);
+  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria || 12.36);
+  const [precioHorasExtra, setPrecioHorasExtra] = useState(currentConfig.precioHoraExtra || 21.63);
   const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora || 1.85);
 
   const [mensaje, setMensaje] = useState('');
@@ -83,7 +83,6 @@ export default function ConfigView({ onConfigSaved }) {
     const jsonString = JSON.stringify(backupData, null, 2);
     const fileName = `tes_nomina_backup_${new Date().toISOString().split('T')[0]}.json`;
 
-    // A. Intentar Web Share API si está disponible en móviles (iOS Safari / Chrome Android)
     try {
       const file = new File([jsonString], fileName, { type: 'application/json' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -95,10 +94,9 @@ export default function ConfigView({ onConfigSaved }) {
         return;
       }
     } catch (shareErr) {
-      if (shareErr.name === 'AbortError') return; // Usuario canceló el menú compartir
+      if (shareErr.name === 'AbortError') return;
     }
 
-    // B. Descarga por Blob (para PC y navegadores de escritorio)
     try {
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -114,7 +112,6 @@ export default function ConfigView({ onConfigSaved }) {
         URL.revokeObjectURL(url);
       }, 1000);
     } catch (err) {
-      // Si la descarga automática falla, abrir directamente el modal manual
       handleOpenJsonModal();
     }
   };
@@ -127,13 +124,11 @@ export default function ConfigView({ onConfigSaved }) {
     setShowJsonModal(true);
   };
 
-  // Copiar al portapapeles con fallback
   const handleCopyToClipboard = async () => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(jsonText);
       } else {
-        // Fallback para navegadores antiguos
         const textArea = document.getElementById('json-manual-textarea');
         if (textArea) {
           textArea.select();
@@ -147,7 +142,6 @@ export default function ConfigView({ onConfigSaved }) {
     }
   };
 
-  // Seleccionar todo el texto del textarea
   const handleSelectAllText = () => {
     const textArea = document.getElementById('json-manual-textarea');
     if (textArea) {
@@ -156,7 +150,6 @@ export default function ConfigView({ onConfigSaved }) {
     }
   };
 
-  // Importar copia de seguridad desde un archivo o texto JSON
   const handleImportBackup = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -173,7 +166,6 @@ export default function ConfigView({ onConfigSaved }) {
     reader.readAsText(file);
   };
 
-  // Importar pegando texto JSON manualmente
   const handleImportJsonFromText = () => {
     const userText = prompt("Pega aquí el contenido JSON de tu copia de seguridad:");
     if (!userText || !userText.trim()) return;
@@ -200,14 +192,14 @@ export default function ConfigView({ onConfigSaved }) {
     <div className="config-container">
       <h2 className="config-title">⚙️ Configuración Económica & Desglose ATH</h2>
       <p className="config-subtitle">
-        Ajusta tus precios por día trabajado (Salario Base, Plus Convenio, Prorrata Pagas) y tarifas horarias (J.Complement 12,47€/h, Horas Extraordinarias/Festivo 21,82€/h).
+        Ajusta tus precios por día del mes natural (Salario Base, Plus Convenio, Prorrata Pagas), Antigüedad Base (62,66€) y tarifas horarias (J.Complement 12,36€/h, Horas Extraordinarias/Festivo 21,63€/h).
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
       <form onSubmit={handleSubmit} className="config-form">
         {/* Conceptos Calculados por Día Trabajado */}
-        <h3 className="section-subtitle">📅 Conceptos por Día Trabajado (Convenio Sevilla 2025)</h3>
+        <h3 className="section-subtitle">📅 Conceptos Fijos por Día del Mes Natural (Convenio Sevilla 2025)</h3>
         
         <div className="form-row">
           <div className="form-group">
@@ -246,7 +238,7 @@ export default function ConfigView({ onConfigSaved }) {
           </div>
 
           <div className="form-group">
-            <label>Antigüedad (€/mes - 5 Años):</label>
+            <label>Antigüedad Base (€/mes completo - 5 Años):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -254,6 +246,7 @@ export default function ConfigView({ onConfigSaved }) {
               onChange={e => setAntiguedad(e.target.value)} 
               required 
             />
+            <small className="field-hint">*Se prorratea por los días trabajados del mes natural (Base × [días / 30]).</small>
           </div>
         </div>
 
@@ -265,12 +258,12 @@ export default function ConfigView({ onConfigSaved }) {
             onChange={e => setFechaIngreso(e.target.value)} 
           />
           <small className="field-hint">
-            *Tramo actual: 37,60 €/mes (5 años). En Noviembre 2026 podrás actualizar al tramo de 6 años.
+            *Tramo 5 años: 62,66 €/mes base completa. En Noviembre 2026 podrás actualizar al tramo de 6 años.
           </small>
         </div>
 
         {/* Tarifas Variables de Hora */}
-        <h3 className="section-subtitle">💶 Tarifas Variables por Hora (Conceptos Excluyentes)</h3>
+        <h3 className="section-subtitle">💶 Tarifas Variables por Hora (Tabla ATH)</h3>
         
         <div className="form-row">
           <div className="form-group">

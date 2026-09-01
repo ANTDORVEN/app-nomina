@@ -6,6 +6,7 @@
  * - Formateo ISO 8601 (YYYY-MM-DD) para almacenamiento limpio.
  * - Cálculo de diferencia de horas considerando cambios de día (ej: turnos nocturnos de 22:00 a 06:00).
  * - Formateo visual de horas decimales a texto 'Xh Ymin' (ej: 8.833 -> "8h 50min").
+ * - Obtención del rango de Mes Natural para los conceptos fijos de la nómina.
  */
 
 /**
@@ -39,13 +40,63 @@ export function formatDateSpanish(isoString) {
 /**
  * Comprueba si una fecha en formato 'YYYY-MM-DD' se encuentra dentro de un rango [inicio, fin]
  * @param {string} targetDate - Fecha del fichaje
- * @param {string} startDate - Fecha inicio del periodo ATH
- * @param {string} endDate - Fecha fin del periodo ATH
+ * @param {string} startDate - Fecha inicio del periodo
+ * @param {string} endDate - Fecha fin del periodo
  * @returns {boolean}
  */
 export function isDateInPeriod(targetDate, startDate, endDate) {
   if (!targetDate || !startDate || !endDate) return false;
   return targetDate >= startDate && targetDate <= endDate;
+}
+
+/**
+ * Deduce el rango de fechas del Mes Natural (ej: 2026-08-01 a 2026-08-31) a partir del objeto de Periodo.
+ * Se apoya preferentemente en el final del rango ATH (fechaFin) o en las fechas de mes natural configuradas.
+ * @param {object} period 
+ * @returns {object} { fechaInicioMesNatural, fechaFinMesNatural, nombreMesNatural, totalDiasMes }
+ */
+export function getNaturalMonthRangeForPeriod(period) {
+  if (!period) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    return {
+      fechaInicioMesNatural: `${y}-${String(m + 1).padStart(2, '0')}-01`,
+      fechaFinMesNatural: `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+      nombreMesNatural: new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(now),
+      totalDiasMes: lastDay
+    };
+  }
+
+  if (period.fechaInicioMesNatural && period.fechaFinMesNatural) {
+    const dEnd = new Date(period.fechaFinMesNatural + 'T00:00:00');
+    const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(dEnd);
+    return {
+      fechaInicioMesNatural: period.fechaInicioMesNatural,
+      fechaFinMesNatural: period.fechaFinMesNatural,
+      nombreMesNatural: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+      totalDiasMes: dEnd.getDate()
+    };
+  }
+
+  // Por defecto, se usa la fecha de fin del periodo ATH para determinar el mes natural correspondiente (ej: 13/08/2026 -> Agosto 2026)
+  const refDate = new Date((period.fechaFin || period.fechaInicio) + 'T00:00:00');
+  const year = refDate.getFullYear();
+  const month = refDate.getMonth(); // 0 - 11
+
+  const firstDayStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const lastDayNum = new Date(year, month + 1, 0).getDate();
+  const lastDayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDayNum).padStart(2, '0')}`;
+
+  const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(refDate);
+
+  return {
+    fechaInicioMesNatural: firstDayStr,
+    fechaFinMesNatural: lastDayStr,
+    nombreMesNatural: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+    totalDiasMes: lastDayNum
+  };
 }
 
 /**
@@ -64,13 +115,12 @@ export function calculateWorkedHours(startTime, endTime) {
   let startTotalMinutes = startH * 60 + startM;
   let endTotalMinutes = endH * 60 + endM;
 
-  // Si la hora de fin es menor que la de inicio, asumimos que cruza la medianoche (+24 horas)
   if (endTotalMinutes < startTotalMinutes) {
     endTotalMinutes += 24 * 60;
   }
 
   const diffMinutes = endTotalMinutes - startTotalMinutes;
-  return Math.round((diffMinutes / 60) * 100) / 100; // Redondeo a 2 decimales para cálculos exactos
+  return Math.round((diffMinutes / 60) * 100) / 100;
 }
 
 /**

@@ -34,14 +34,18 @@ export function getConfig() {
   let needsUpdate = false;
   const mergedConfig = { ...DEFAULT_CONFIG, ...storedConfig };
 
-  // Forzar actualización si las tarifas antiguas no coinciden con las corregidas (12.47 / 21.82)
-  if (storedConfig.precioHoraOrdinaria === 12.36) {
-    mergedConfig.precioHoraOrdinaria = 12.47;
+  // Migración automática de tarifas corregidas (J.Complement 12.36 €/h, Festivo/Extra 21.63 €/h, Base Antigüedad 62.66 €)
+  if (storedConfig.precioHoraOrdinaria === 12.47) {
+    mergedConfig.precioHoraOrdinaria = 12.36;
     needsUpdate = true;
   }
-  if (storedConfig.precioHoraExtra === 21.63 || storedConfig.precioHoraFestiva === 21.00) {
-    mergedConfig.precioHoraExtra = 21.82;
-    mergedConfig.precioHoraFestiva = 21.82;
+  if (storedConfig.precioHoraExtra === 21.82 || storedConfig.precioHoraFestiva === 21.82) {
+    mergedConfig.precioHoraExtra = 21.63;
+    mergedConfig.precioHoraFestiva = 21.63;
+    needsUpdate = true;
+  }
+  if (storedConfig.antiguedadMensual === 37.60) {
+    mergedConfig.antiguedadMensual = 62.66;
     needsUpdate = true;
   }
 

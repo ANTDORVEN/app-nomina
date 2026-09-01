@@ -1,16 +1,23 @@
 /**
- * payrollService.js - Servicio de cálculo de nómina adaptado al desglose oficial de Ambulancias Tenorio (ATH).
+ * payrollService.js - Servicio de cálculo de nómina adaptado al modelo de Doble Bloque ATH (Mes Natural + Rango Tabla ATH).
  * 
- * Reglas de Exclusividad Estricta:
- * 1. Días NORMALES (no festivos): Las horas de más que excedan la jornada estándar de 8h (o turnos de 12h/sábados)
- *    van EXCLUSIVAMENTE a 'J.Complement / Excesos Presenciales' a 12,47 €/hora. NUNCA a Horas Extraordinarias.
- * 2. Días FESTIVOS: TODAS las horas trabajadas en festivo van EXCLUSIVAMENTE a 'Horas Extraordinarias' a 21,82 €/hora.
- *    NUNCA se cuentan también en J.Complement.
- * 3. Ambas categorías son estrictamente mutuamente excluyentes (jamás se duplican ni solapan).
+ * Estructura de Cálculo de Cada Nómina:
+ * 1. BLOQUE DE CONCEPTOS FIJOS (Mes Natural: 01/MM a 31/MM):
+ *    - Salario Base (días liquidados en mes natural × 41,78 €/día)
+ *    - Plus Convenio (días liquidados en mes natural × 5,58 €/día)
+ *    - Prorrata Paga Extra (días liquidados en mes natural × 8,24 €/día)
+ *    - Antigüedad (62,66 € base mensual 5 años × [días liquidados / 30])
+ * 
+ * 2. BLOQUE DE CONCEPTOS VARIABLES (Rango Tabla ATH: ej. 15/07 a 13/08):
+ *    - J.Complement (excesos presenciales en días laborables/sábados × 12,36 €/hora)
+ *    - Horas Extraordinarias / Festivas (horas trabajadas en festivo × 21,63 €/hora)
+ *    - Plus Nocturnidad (horas nocturnas × 1,85 €/hora)
+ * 
+ * 3. SUMA TOTAL NÓMINA = Bloque Fijo (Mes Natural) + Bloque Variable (Tabla ATH)
  */
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
-import { isDateInPeriod } from '../utils/dateUtils.js';
+import { isDateInPeriod, getNaturalMonthRangeForPeriod } from '../utils/dateUtils.js';
 
 export function calculatePayrollForPeriod(period) {
   if (!period) return getEmptyPayrollSummary();
@@ -19,17 +26,47 @@ export function calculatePayrollForPeriod(period) {
   const allLogs = getAllTimeLogs();
   const shiftTypes = getShiftTypes();
 
+  // Deducción del rango del Mes Natural (ej: 2026-08-01 a 2026-08-31 para Nómina de Agosto)
+  const naturalMonthInfo = getNaturalMonthRangeForPeriod(period);
+  const { fechaInicioMesNatural, fechaFinMesNatural, nombreMesNatural, totalDiasMes } = naturalMonthInfo;
+
+  // -------------------------------------------------------------
+  // PASO 1: BLOQUE FIJO - Filtrado por Mes Natural (01/MM al 31/MM)
+  // -------------------------------------------------------------
+  const naturalMonthLogs = allLogs.filter(log => 
+    isDateInPeriod(log.fecha, fechaInicioMesNatural, fechaFinMesNatural)
+  );
+
+  // Días únicos de fichaje registrados en el mes natural
+  const diasLiquidablesMesNatural = new Set(naturalMonthLogs.map(l => l.fecha)).size;
+
+  const precioSalarioBaseDia = Number(config.precioSalarioBaseDia) || 41.78;
+  const precioPlusConvenioDia = Number(config.precioPlusConvenioDia) || 5.58;
+  const precioProrrataPagaExtraDia = Number(config.precioProrrataPagaExtraDia) || 8.24;
+  const antiguedadMensualBase = Number(config.antiguedadMensual) || 62.66; // Base mensual completa 5 años
+
+  const importeSalarioBase = diasLiquidablesMesNatural * precioSalarioBaseDia;
+  const importePlusConvenio = diasLiquidablesMesNatural * precioPlusConvenioDia;
+  const importeProrrataPagas = diasLiquidablesMesNatural * precioProrrataPagaExtraDia;
+
+  // Antigüedad prorrateada por días del mes natural (62,66€ × [días / 30])
+  const importeAntiguedad = antiguedadMensualBase * (diasLiquidablesMesNatural / 30);
+
+  const subtotalFijoMesNatural = importeSalarioBase + importePlusConvenio + importeProrrataPagas + importeAntiguedad;
+
+  // -------------------------------------------------------------
+  // PASO 2: BLOQUE VARIABLE - Filtrado por Rango Tabla ATH (ej: 15/07 al 13/08)
+  // -------------------------------------------------------------
   const periodLogs = allLogs.filter(log => 
     isDateInPeriod(log.fecha, period.fechaInicio, period.fechaFin)
   );
 
-  // Días únicos contabilizados en el periodo
-  const diasLiquidables = new Set(periodLogs.map(l => l.fecha)).size;
+  const diasLiquidablesATH = new Set(periodLogs.map(l => l.fecha)).size;
 
   let totalHorasPresenciales = 0;
   let totalHorasDescansoDescontadas = 0;
-  let totalHorasJComplement = 0; // Excesos en días normales no festivos (12,47 €/h)
-  let totalHorasFestivasExtra = 0; // Horas trabajadas en festivos (21,82 €/h)
+  let totalHorasJComplement = 0; // Excesos en días normales no festivos (12,36 €/h)
+  let totalHorasFestivasExtra = 0; // Horas trabajadas en festivos (21,63 €/h)
   let totalHorasNocturnas = 0;
   let totalDiasFestivos = 0;
 
@@ -41,20 +78,17 @@ export function calculatePayrollForPeriod(period) {
     totalHorasPresenciales += horasPresencialesReales;
     totalHorasDescansoDescontadas += descansoNoPagado;
 
-    // Horas liquidadas reales descontando el descanso no retribuido
     const horasLiquidadasDia = Math.max(0, horasPresencialesReales - descansoNoPagado);
 
     // Comprobar si el día es FESTIVO
     const isFestivoDay = log.esFestivo === true || (shiftType && (shiftType.id === 'festivo' || shiftType.id === 'domingo_alterno' || shiftType.esFestivo === true));
 
     if (isFestivoDay) {
-      // 🟢 CASO FESTIVO: TODAS las horas del festivo se pagan a Horas Extraordinarias (21,82 €/h)
-      // NUNCA se suman a J.Complement
+      // 🟢 CASO FESTIVO: Horas Extraordinarias / Festivos (21,63 €/h)
       totalHorasFestivasExtra += horasLiquidadasDia;
       totalDiasFestivos += 1;
     } else {
-      // 🔵 CASO DÍA NORMAL (No Festivo): Las horas que exceden la jornada van SOLO a J.Complement (12,47 €/h)
-      // NUNCA se suman a Horas Extraordinarias
+      // 🔵 CASO DÍA NORMAL (No Festivo): J.Complement (12,36 €/h)
       const isSaturdayDay = shiftType && shiftType.id === 'sabado_alterno';
       const isTurno12 = log.tipoTurnoId === 'turno12';
 
@@ -66,7 +100,7 @@ export function calculatePayrollForPeriod(period) {
       }
     }
 
-    // Horas de nocturnidad (acumulación de noche)
+    // Horas de nocturnidad
     if (log.horasNocturnas) {
       totalHorasNocturnas += Number(log.horasNocturnas);
     } else if (shiftType && shiftType.generaNocturnidad) {
@@ -74,38 +108,40 @@ export function calculatePayrollForPeriod(period) {
     }
   });
 
-  // Precios por día
-  const precioSalarioBaseDia = Number(config.precioSalarioBaseDia) || 41.78;
-  const precioPlusConvenioDia = Number(config.precioPlusConvenioDia) || 5.58;
-  const precioProrrataPagaExtraDia = Number(config.precioProrrataPagaExtraDia) || 8.24;
-
-  // Antigüedad fija por tramo
-  const antiguedadMensual = Number(config.antiguedadMensual) || 37.60;
-
-  // Tarifas por hora corregidas
-  const precioJComplement = Number(config.precioHoraOrdinaria) || 12.47;
-  const precioHorasExtra = Number(config.precioHoraExtra) || 21.82;
+  // Tarifas variables por hora corregidas
+  const precioJComplement = Number(config.precioHoraOrdinaria) || 12.36;
+  const precioHorasExtra = Number(config.precioHoraExtra) || 21.63;
   const plusNocturnidad = Number(config.plusNocturnidadHora) || 1.85;
 
-  // Cálculo proporcional por días trabajados en el periodo
-  const importeSalarioBase = diasLiquidables * precioSalarioBaseDia;
-  const importePlusConvenio = diasLiquidables * precioPlusConvenioDia;
-  const importeProrrataPagas = diasLiquidables * precioProrrataPagaExtraDia;
-  const importeAntiguedad = antiguedadMensual;
-
-  const totalBaseDias = importeSalarioBase + importePlusConvenio + importeProrrataPagas + importeAntiguedad;
-
-  // Importes variables por horas excluyentes
   const importeJComplement = totalHorasJComplement * precioJComplement;
   const importeHorasExtra = totalHorasFestivasExtra * precioHorasExtra;
   const importeNocturnidad = totalHorasNocturnas * plusNocturnidad;
 
-  const estimacionBrutoTotal = totalBaseDias + importeJComplement + importeHorasExtra + importeNocturnidad;
+  const subtotalVariablePeriodoATH = importeJComplement + importeHorasExtra + importeNocturnidad;
+
+  // -------------------------------------------------------------
+  // PASO 3: SUMA TOTAL ESTIMADA DE NÓMINA BRUTA
+  // -------------------------------------------------------------
+  const estimacionBrutoTotal = subtotalFijoMesNatural + subtotalVariablePeriodoATH;
 
   return {
     periodo: period,
+    mesNatural: {
+      fechaInicio: fechaInicioMesNatural,
+      fechaFin: fechaFinMesNatural,
+      nombreMes: nombreMesNatural,
+      totalDiasMes,
+      diasLiquidables: diasLiquidablesMesNatural,
+      logsCount: naturalMonthLogs.length
+    },
+    periodoATH: {
+      fechaInicio: period.fechaInicio,
+      fechaFin: period.fechaFin,
+      diasLiquidables: diasLiquidablesATH,
+      logsCount: periodLogs.length
+    },
     fichajesContabilizados: periodLogs.length,
-    diasLiquidables,
+    diasLiquidables: diasLiquidablesMesNatural,
     totalHorasTrabajadas: totalHorasPresenciales - totalHorasDescansoDescontadas,
     totalHorasPresenciales,
     totalHorasDescansoDescontadas,
@@ -118,10 +154,11 @@ export function calculatePayrollForPeriod(period) {
       plusConvenio: Math.round(importePlusConvenio * 100) / 100,
       prorrataPagas: Math.round(importeProrrataPagas * 100) / 100,
       antiguedad: Math.round(importeAntiguedad * 100) / 100,
-      totalBaseDias: Math.round(totalBaseDias * 100) / 100,
+      totalBaseDias: Math.round(subtotalFijoMesNatural * 100) / 100,
       precioSalarioBaseDia,
       precioPlusConvenioDia,
-      precioProrrataPagaExtraDia
+      precioProrrataPagaExtraDia,
+      antiguedadMensualBase
     },
     tarifasAplicadas: {
       precioJComplement,
@@ -129,6 +166,8 @@ export function calculatePayrollForPeriod(period) {
       plusNocturnidad
     },
     desgloseImportes: {
+      subtotalFijoMesNatural: Math.round(subtotalFijoMesNatural * 100) / 100,
+      subtotalVariableATH: Math.round(subtotalVariablePeriodoATH * 100) / 100,
       jornadaComplementaria: Math.round(importeJComplement * 100) / 100,
       horasExtraordinarias: Math.round(importeHorasExtra * 100) / 100,
       nocturnidad: Math.round(importeNocturnidad * 100) / 100
@@ -141,6 +180,8 @@ export function calculatePayrollForPeriod(period) {
 function getEmptyPayrollSummary() {
   return {
     periodo: null,
+    mesNatural: { fechaInicio: '', fechaFin: '', nombreMes: '', totalDiasMes: 30, diasLiquidables: 0, logsCount: 0 },
+    periodoATH: { fechaInicio: '', fechaFin: '', diasLiquidables: 0, logsCount: 0 },
     fichajesContabilizados: 0,
     diasLiquidables: 0,
     totalHorasTrabajadas: 0,
@@ -150,9 +191,9 @@ function getEmptyPayrollSummary() {
     totalHorasFestivasExtra: 0,
     totalHorasNocturnas: 0,
     totalDiasFestivos: 0,
-    conceptosDiarios: { salarioBase: 0, plusConvenio: 0, prorrataPagas: 0, antiguedad: 0, totalBaseDias: 0, precioSalarioBaseDia: 41.78, precioPlusConvenioDia: 5.58, precioProrrataPagaExtraDia: 8.24 },
-    tarifasAplicadas: { precioJComplement: 12.47, precioHorasExtra: 21.82, plusNocturnidad: 1.85 },
-    desgloseImportes: { jornadaComplementaria: 0, horasExtraordinarias: 0, nocturnidad: 0 },
+    conceptosDiarios: { salarioBase: 0, plusConvenio: 0, prorrataPagas: 0, antiguedad: 0, totalBaseDias: 0, precioSalarioBaseDia: 41.78, precioPlusConvenioDia: 5.58, precioProrrataPagaExtraDia: 8.24, antiguedadMensualBase: 62.66 },
+    tarifasAplicadas: { precioJComplement: 12.36, precioHorasExtra: 21.63, plusNocturnidad: 1.85 },
+    desgloseImportes: { subtotalFijoMesNatural: 0, subtotalVariableATH: 0, jornadaComplementaria: 0, horasExtraordinarias: 0, nocturnidad: 0 },
     estimacionBrutoTotal: 0,
     logs: []
   };
