@@ -113,19 +113,19 @@ export default function ResumenCard({ summary }) {
         </h3>
         <div className="desglose-list">
           <div className="desglose-row">
-            <span>Salario Base ({diasMesNatural} días × {precioBaseDia.toFixed(2)}€/día)</span>
+            <span>Salario Base ({(precioBaseDia * 30).toFixed(2)}€ × {diasMesNatural}/30)</span>
             <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.salarioBase.toFixed(2) : '0.00'} €</span>
           </div>
           <div className="desglose-row">
-            <span>Plus Convenio ({diasMesNatural} días × {precioPlusDia.toFixed(2)}€/día)</span>
+            <span>Plus Convenio ({(precioPlusDia * 30).toFixed(2)}€ × {diasMesNatural}/30)</span>
             <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.plusConvenio.toFixed(2) : '0.00'} €</span>
           </div>
           <div className="desglose-row">
-            <span>Prorrata Paga Extra ({diasMesNatural} días × {precioProrrataDia.toFixed(2)}€/día)</span>
+            <span>Prorrata Paga Extra ({(precioProrrataDia * 30).toFixed(2)}€ × {diasMesNatural}/30)</span>
             <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.prorrataPagas.toFixed(2) : '0.00'} €</span>
           </div>
           <div className="desglose-row">
-            <span>Antigüedad (5 años: {antiguedadBase.toFixed(2)}€ × {diasMesNatural}/30)</span>
+            <span>Antigüedad ({antiguedadBase.toFixed(2)}€ × {diasMesNatural}/30)</span>
             <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.antiguedad.toFixed(2) : '0.00'} €</span>
           </div>
           <div className="desglose-row subtotal-row">

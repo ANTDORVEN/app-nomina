@@ -10,19 +10,19 @@ export default function ConfigView({ onConfigSaved }) {
   const currentConfig = getConfig();
   const [shiftTypes, setShiftTypes] = useState(getShiftTypes());
 
-  // Tarifas por Día (Desglose ATH)
-  const [salarioBaseDia, setSalarioBaseDia] = useState(currentConfig.precioSalarioBaseDia || 41.78);
-  const [plusConvenioDia, setPlusConvenioDia] = useState(currentConfig.precioPlusConvenioDia || 5.58);
-  const [prorrataPagasDia, setProrrataPagasDia] = useState(currentConfig.precioProrrataPagaExtraDia || 8.24);
+  // Importes mensuales exactos; referencia de 30 días para el prorrateo.
+  const [salarioBaseMensual, setSalarioBaseMensual] = useState(currentConfig.salarioBaseMensual ?? 1253.26);
+  const [plusConvenioMensual, setPlusConvenioMensual] = useState(currentConfig.plusConvenio ?? 167.52);
+  const [prorrataPagasMensual, setProrrataPagasMensual] = useState(currentConfig.prorrateoPagasExtra ?? 247.24);
 
   // Antigüedad (Base Completa Mensual)
-  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual || 62.66);
-  const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2021-11-01');
+  const [antiguedad, setAntiguedad] = useState(currentConfig.antiguedadMensual ?? 62.66);
+  const [fechaIngreso, setFechaIngreso] = useState(currentConfig.fechaIngresoEmpresa || '2020-11-11');
 
   // Tarifas por Hora Excluyentes
-  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria || 12.36);
-  const [precioHorasExtra, setPrecioHorasExtra] = useState(currentConfig.precioHoraExtra || 21.63);
-  const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora || 1.85);
+  const [precioJComplement, setPrecioJComplement] = useState(currentConfig.precioHoraOrdinaria ?? 12.36);
+  const [precioHorasExtra, setPrecioHorasExtra] = useState(currentConfig.precioHoraExtra ?? 21.63);
+  const [plusNocturnidad, setPlusNocturnidad] = useState(currentConfig.plusNocturnidadHora ?? 1.85);
 
   const [mensaje, setMensaje] = useState('');
 
@@ -46,9 +46,12 @@ export default function ConfigView({ onConfigSaved }) {
 
     const updatedConfig = {
       ...currentConfig,
-      precioSalarioBaseDia: Number(salarioBaseDia),
-      precioPlusConvenioDia: Number(plusConvenioDia),
-      precioProrrataPagaExtraDia: Number(prorrataPagasDia),
+      salarioBaseMensual: Number(salarioBaseMensual),
+      plusConvenio: Number(plusConvenioMensual),
+      prorrateoPagasExtra: Number(prorrataPagasMensual),
+      precioSalarioBaseDia: Number(salarioBaseMensual) / 30,
+      precioPlusConvenioDia: Number(plusConvenioMensual) / 30,
+      precioProrrataPagaExtraDia: Number(prorrataPagasMensual) / 30,
       antiguedadMensual: Number(antiguedad),
       fechaIngresoEmpresa: fechaIngreso,
       precioHoraOrdinaria: Number(precioJComplement),
@@ -111,7 +114,7 @@ export default function ConfigView({ onConfigSaved }) {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }, 1000);
-    } catch (err) {
+    } catch {
       handleOpenJsonModal();
     }
   };
@@ -137,7 +140,7 @@ export default function ConfigView({ onConfigSaved }) {
       }
       setCopyFeedback('¡Copiado al portapapeles con éxito! ✅');
       setTimeout(() => setCopyFeedback(''), 4000);
-    } catch (err) {
+    } catch {
       setCopyFeedback('Selecciona todo el texto de abajo y pulsa Copiar.');
     }
   };
@@ -159,7 +162,7 @@ export default function ConfigView({ onConfigSaved }) {
       try {
         const imported = JSON.parse(event.target.result);
         applyImportedData(imported);
-      } catch (err) {
+      } catch {
         alert('Error al leer el archivo JSON de copia de seguridad.');
       }
     };
@@ -173,7 +176,7 @@ export default function ConfigView({ onConfigSaved }) {
     try {
       const imported = JSON.parse(userText.trim());
       applyImportedData(imported);
-    } catch (err) {
+    } catch {
       alert("El texto introducido no es un JSON válido.");
     }
   };
@@ -192,34 +195,35 @@ export default function ConfigView({ onConfigSaved }) {
     <div className="config-container">
       <h2 className="config-title">⚙️ Configuración Económica & Desglose ATH</h2>
       <p className="config-subtitle">
-        Ajusta tus precios por día del mes natural (Salario Base, Plus Convenio, Prorrata Pagas), Antigüedad Base (62,66€) y tarifas horarias (J.Complement 12,36€/h, Horas Extraordinarias/Festivo 21,63€/h).
+        Ajusta los importes mensuales de tu tabla salarial, la antigüedad y las tarifas por hora.
       </p>
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
       <form onSubmit={handleSubmit} className="config-form">
         {/* Conceptos Calculados por Día Trabajado */}
-        <h3 className="section-subtitle">📅 Conceptos Fijos por Día del Mes Natural (Convenio Sevilla 2025)</h3>
+        <h3 className="section-subtitle">📅 Conceptos fijos: importes de referencia para 30 días</h3>
+        <p className="section-desc">El cálculo conserva los decimales al dividir entre 30. Las vacaciones mantienen el salario fijo.</p>
         
         <div className="form-row">
           <div className="form-group">
-            <label>Salario Base (€/día):</label>
+            <label>Salario base (€/30 días):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={salarioBaseDia} 
-              onChange={e => setSalarioBaseDia(e.target.value)} 
+              value={salarioBaseMensual}
+              onChange={e => setSalarioBaseMensual(e.target.value)}
               required 
             />
           </div>
 
           <div className="form-group">
-            <label>Plus Convenio (€/día):</label>
+            <label>Plus convenio (€/30 días):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={plusConvenioDia} 
-              onChange={e => setPlusConvenioDia(e.target.value)} 
+              value={plusConvenioMensual}
+              onChange={e => setPlusConvenioMensual(e.target.value)}
               required 
             />
           </div>
@@ -227,18 +231,18 @@ export default function ConfigView({ onConfigSaved }) {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Prorrata Paga Extra (€/día):</label>
+            <label>Prorrata de pagas extras (€/30 días):</label>
             <input 
               type="number" 
               step="0.01" 
-              value={prorrataPagasDia} 
-              onChange={e => setProrrataPagasDia(e.target.value)} 
+              value={prorrataPagasMensual}
+              onChange={e => setProrrataPagasMensual(e.target.value)}
               required 
             />
           </div>
 
           <div className="form-group">
-            <label>Antigüedad Base (€/mes completo - 5 Años):</label>
+            <label>Antigüedad base (€/30 días):</label>
             <input 
               type="number" 
               step="0.01" 
@@ -246,7 +250,7 @@ export default function ConfigView({ onConfigSaved }) {
               onChange={e => setAntiguedad(e.target.value)} 
               required 
             />
-            <small className="field-hint">*Se prorratea por los días trabajados del mes natural (Base × [días / 30]).</small>
+            <small className="field-hint">Se prorratea por los días liquidables, incluidas las vacaciones (base × días / 30).</small>
           </div>
         </div>
 
@@ -258,7 +262,7 @@ export default function ConfigView({ onConfigSaved }) {
             onChange={e => setFechaIngreso(e.target.value)} 
           />
           <small className="field-hint">
-            *Tramo 5 años: 62,66 €/mes base completa. En Noviembre 2026 podrás actualizar al tramo de 6 años.
+            La fecha no cambia las tarifas automáticamente. Confirma cuándo corresponde cada tramo antes de modificar los importes.
           </small>
         </div>
 

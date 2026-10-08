@@ -3,7 +3,7 @@
  * 
  * Estructura de Cálculo de Cada Nómina:
  * 1. BLOQUE DE CONCEPTOS FIJOS (Mes Natural: 01/MM a 31/MM):
- *    - Días Liquidables Mes Natural = Días totales del mes (28/29/30/31) - Días de Ausencia (Vacaciones, Baja, Paternidad, Moscosos).
+ *    - Las vacaciones mantienen los conceptos fijos. El resto de ausencias conserva su tratamiento anterior, pendiente de revisión.
  *    - Salario Base (Días liquidados mes natural × 41,78 €/día)
  *    - Plus Convenio (Días liquidados mes natural × 5,58 €/día)
  *    - Prorrata Paga Extra (Días liquidados mes natural × 8,24 €/día)
@@ -19,6 +19,10 @@
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
 import { isDateInPeriod, getNaturalMonthRangeForPeriod } from '../utils/dateUtils.js';
+
+const roundMoney = value => Math.round((value + Number.EPSILON) * 100) / 100;
+const numericRate = (value, fallback) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))
+  ? Number(value) : fallback;
 
 export function calculatePayrollForPeriod(period) {
   if (!period) return getEmptyPayrollSummary();
@@ -38,9 +42,10 @@ export function calculatePayrollForPeriod(period) {
     isDateInPeriod(log.fecha, fechaInicioMesNatural, fechaFinMesNatural)
   );
 
-  // Identificar días con tipo de AUSENCIA (esAusencia: true, Vacaciones, Bajas, Moscosos)
+  // Las vacaciones son retribuidas; no se descuentan del bloque fijo.
   const ausenciasMonthLogs = naturalMonthLogs.filter(log => {
     const shiftType = shiftTypes.find(t => t.id === log.tipoTurnoId);
+    if (log.tipoTurnoId === 'vacaciones') return false;
     return log.esAusencia === true || 
            (shiftType && (shiftType.esAusencia === true || 
                           shiftType.id === 'vacaciones' || 
@@ -54,17 +59,19 @@ export function calculatePayrollForPeriod(period) {
   // Días liquidables del Mes Natural = Días totales del mes (28/29/30/31) - Días de Ausencia
   const diasLiquidablesMesNatural = Math.max(0, totalDiasMes - diasAusenciaMesNatural);
 
-  const precioSalarioBaseDia = Number(config.precioSalarioBaseDia) || 41.78;
-  const precioPlusConvenioDia = Number(config.precioPlusConvenioDia) || 5.58;
-  const precioProrrataPagaExtraDia = Number(config.precioProrrataPagaExtraDia) || 8.24;
-  const antiguedadMensualBase = Number(config.antiguedadMensual) || 62.66; // Base mensual completa 5 años
+  // Mantener los decimales del importe mensual hasta redondear cada concepto.
+  // Se conserva la regla anterior de días liquidables / 30.
+  const precioSalarioBaseDia = numericRate(config.salarioBaseMensual, 1253.26) / 30;
+  const precioPlusConvenioDia = numericRate(config.plusConvenio, 167.52) / 30;
+  const precioProrrataPagaExtraDia = numericRate(config.prorrateoPagasExtra, 247.24) / 30;
+  const antiguedadMensualBase = numericRate(config.antiguedadMensual, 62.66);
 
-  const importeSalarioBase = diasLiquidablesMesNatural * precioSalarioBaseDia;
-  const importePlusConvenio = diasLiquidablesMesNatural * precioPlusConvenioDia;
-  const importeProrrataPagas = diasLiquidablesMesNatural * precioProrrataPagaExtraDia;
+  const importeSalarioBase = roundMoney(diasLiquidablesMesNatural * precioSalarioBaseDia);
+  const importePlusConvenio = roundMoney(diasLiquidablesMesNatural * precioPlusConvenioDia);
+  const importeProrrataPagas = roundMoney(diasLiquidablesMesNatural * precioProrrataPagaExtraDia);
 
   // Antigüedad prorrateada por días liquidables del mes natural (62,66€ × [días liquidables / 30])
-  const importeAntiguedad = antiguedadMensualBase * (diasLiquidablesMesNatural / 30);
+  const importeAntiguedad = roundMoney(antiguedadMensualBase * (diasLiquidablesMesNatural / 30));
 
   const subtotalFijoMesNatural = importeSalarioBase + importePlusConvenio + importeProrrataPagas + importeAntiguedad;
 
@@ -106,7 +113,7 @@ export function calculatePayrollForPeriod(period) {
       const isSaturdayDay = shiftType && shiftType.id === 'sabado_alterno';
       const isTurno12 = log.tipoTurnoId === 'turno12';
 
-      if (isSaturdayDay || isTurno12) {
+      if (isSaturdayDay || isTurno12 || log.tipoTurnoId === 'jornada_adicional') {
         totalHorasJComplement += horasLiquidadasDia;
       } else {
         const excesoDia = Math.max(0, horasLiquidadasDia - 8);
@@ -123,13 +130,13 @@ export function calculatePayrollForPeriod(period) {
   });
 
   // Tarifas variables por hora
-  const precioJComplement = Number(config.precioHoraOrdinaria) || 12.36;
-  const precioHorasExtra = Number(config.precioHoraExtra) || 21.63;
-  const plusNocturnidad = Number(config.plusNocturnidadHora) || 1.85;
+  const precioJComplement = numericRate(config.precioHoraOrdinaria, 12.36);
+  const precioHorasExtra = numericRate(config.precioHoraExtra, 21.63);
+  const plusNocturnidad = numericRate(config.plusNocturnidadHora, 1.85);
 
-  const importeJComplement = totalHorasJComplement * precioJComplement;
-  const importeHorasExtra = totalHorasFestivasExtra * precioHorasExtra;
-  const importeNocturnidad = totalHorasNocturnas * plusNocturnidad;
+  const importeJComplement = roundMoney(totalHorasJComplement * precioJComplement);
+  const importeHorasExtra = roundMoney(totalHorasFestivasExtra * precioHorasExtra);
+  const importeNocturnidad = roundMoney(totalHorasNocturnas * plusNocturnidad);
 
   const subtotalVariablePeriodoATH = importeJComplement + importeHorasExtra + importeNocturnidad;
 

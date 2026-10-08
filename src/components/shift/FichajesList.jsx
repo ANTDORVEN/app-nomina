@@ -54,6 +54,9 @@ export default function FichajesList({ logs, onDeleteLog }) {
                 {log.horasExtra > 0 && (
                   <span className="tag extra-tag">+{formatHoursToHHMM(log.horasExtra)} Extra</span>
                 )}
+                {log.tipoTurnoId === 'jornada_adicional' && (
+                  <span className="tag extra-tag">Jornada adicional: pago completo</span>
+                )}
                 {log.esFestivo && (
                   <span className="tag festivo-tag">Festivo</span>
                 )}

@@ -34,19 +34,25 @@ export function getConfig() {
   let needsUpdate = false;
   const mergedConfig = { ...DEFAULT_CONFIG, ...storedConfig };
 
-  // Migración automática de tarifas corregidas (J.Complement 12.36 €/h, Festivo/Extra 21.63 €/h, Base Antigüedad 62.66 €)
-  if (storedConfig.precioHoraOrdinaria === 12.47) {
-    mergedConfig.precioHoraOrdinaria = 12.36;
+  // Corrección de la fecha inicial de esta aplicación personal.
+  // Las tarifas configuradas se conservan: también existen otros tramos de antigüedad.
+  if (storedConfig.fechaIngresoEmpresa === '2021-11-01') {
+    mergedConfig.fechaIngresoEmpresa = '2020-11-11';
     needsUpdate = true;
   }
-  if (storedConfig.precioHoraExtra === 21.82 || storedConfig.precioHoraFestiva === 21.82) {
-    mergedConfig.precioHoraExtra = 21.63;
-    mergedConfig.precioHoraFestiva = 21.63;
-    needsUpdate = true;
-  }
-  if (storedConfig.antiguedadMensual === 37.60) {
-    mergedConfig.antiguedadMensual = 62.66;
-    needsUpdate = true;
+
+  // Copias antiguas con tarifas diarias personalizadas conservan sus importes.
+  for (const [monthlyKey, dailyKey] of [
+    ['salarioBaseMensual', 'precioSalarioBaseDia'],
+    ['plusConvenio', 'precioPlusConvenioDia'],
+    ['prorrateoPagasExtra', 'precioProrrataPagaExtraDia']
+  ]) {
+    if (storedConfig[monthlyKey] == null && storedConfig[dailyKey] != null) {
+      mergedConfig[monthlyKey] = Number(storedConfig[dailyKey]) === DEFAULT_CONFIG[dailyKey]
+        ? DEFAULT_CONFIG[monthlyKey]
+        : Number(storedConfig[dailyKey]) * 30;
+      needsUpdate = true;
+    }
   }
 
   Object.keys(DEFAULT_CONFIG).forEach(key => {

@@ -1,5 +1,20 @@
 # TES Control & Nómina — Documento de Traspaso del Proyecto
 
+## Revisión del 08/10/2026 (prevalece sobre las notas históricas siguientes)
+
+- Fecha de ingreso confirmada por Antonio: 11/11/2020. Se corrige la fecha inicial 01/11/2021, conservando otras fechas personalizadas.
+- La nómina de septiembre de 2026 mantiene salario base, convenio, prorrata y antigüedad con 30 días de vacaciones. Las vacaciones ya no se descuentan del bloque fijo. El tratamiento de bajas, paternidad y asuntos propios sigue pendiente de revisión; no se ha validado con esta nómina.
+- Los importes de referencia de 30 días son 1.253,26 €, 167,52 €, 247,24 € y 62,66 €. Se conservan decimales al dividir entre 30 y se redondea cada concepto antes de sumar. La regla histórica de días liquidables / 30 se mantiene; falta contrastar meses completos de 28, 29 y 31 días.
+- Los ajustes ahora editan importes de referencia mensuales y guardan también sus equivalentes diarios para compatibilidad. Las copias antiguas con precios diarios personalizados conservan su equivalencia mensual.
+- Se elimina la migración que sustituía 12,47/21,82 € por 12,36/21,63 € y 37,60 € por 62,66 €: son valores de distintos tramos, no errores por sí mismos. No hay actualización automática de tarifas por antigüedad ni historial de tarifas por periodo.
+- Nuevo tipo `jornada_adicional`: todas las horas pagadas van a jornada complementaria, descontando descansos. Si se marca festivo, solo se aplica la tarifa festiva.
+- Antonio confirma que realizó la jornada de Dani del 29/08/2026 (06:00-14:30) y debía cobrarla completa. En la copia original figura como mañana. Reclasificarla produce 26,32 horas complementarias, frente a 29 pagadas; Antonio indica que hubo horas sin registrar. No reconstruirlas ni declarar una deuda a partir de esta diferencia.
+- Los valores iniciales incluyen los 12 periodos del PDF ATH 2026. Se conservan los periodos ya guardados por el usuario.
+- Tercera paga: la nómina contiene «CUOTA PPE ACUERDO 05-11-25», 169,78 €. Los comunicados aportados recogen desacuerdos; no hay acuerdo final confirmado. No automatizar este importe ni la subida del 2 % ni el límite/arrastre de 80 horas como reglas cerradas.
+- Comprobaciones automatizadas: `npm run test`, `npm run lint`, `npm run build`. Una compilación correcta no valida los conceptos pendientes.
+
+---
+
 **Propietario:** Antonio, Técnico en Emergencias Sanitarias (TES) en ATH Ambulancias Tenorio, Sevilla.
 **Objetivo de la app:** controlar turnos, guardias, calendario anual y calcular la nómina mensual estimada, todo en una sola app, sin depender de varias herramientas.
 **Uso:** personal (con intención futura de adaptarla para otros compañeros/sectores, ver sección final).

@@ -3,6 +3,9 @@
  */
 
 export const DEFAULT_CONFIG = {
+  salarioBaseMensual: 1253.26,
+  plusConvenio: 167.52,
+  prorrateoPagasExtra: 247.24,
   // Conceptos fijos calculados por día del mes natural (01 a 31 de cada mes)
   precioSalarioBaseDia: 41.78,       // Salario Base (€/día)
   precioPlusConvenioDia: 5.58,       // Plus Convenio (€/día)
@@ -17,11 +20,22 @@ export const DEFAULT_CONFIG = {
   precioHoraFestiva: 21.63,          // Horas Festivas (€/h)
   plusNocturnidadHora: 1.85,         // Plus Nocturnidad (€/h noche)
   
-  fechaIngresoEmpresa: '2021-11-01', // Fecha de ingreso para recálculo de antigüedad
+  fechaIngresoEmpresa: '2020-11-11', // Fecha confirmada por Antonio
   mesesPagasExtra: [6, 12]
 };
 
 export const DEFAULT_SHIFT_TYPES = [
+  {
+    id: 'jornada_adicional',
+    nombre: 'Jornada adicional (pago completo)',
+    nombreCorto: 'Adic.',
+    horaInicio: '06:00',
+    horaFin: '14:30',
+    horasTeoricas: 8,
+    horasDescansoNoPagadas: 0,
+    generaNocturnidad: false,
+    color: '#db2777'
+  },
   {
     id: 'manana',
     nombre: 'Mañana (M)',
@@ -191,42 +205,70 @@ export const DEFAULT_PAYROLL_PERIODS = [
     id: 'ath_2026_03',
     nombreNomina: 'Nómina Marzo 2026',
     fechaInicio: '2026-02-20',
-    fechaFin: '2026-03-22',
+    fechaFin: '2026-03-24',
     estaCerrado: false
   },
   {
     id: 'ath_2026_04',
     nombreNomina: 'Nómina Abril 2026',
-    fechaInicio: '2026-03-23',
-    fechaFin: '2026-04-19',
+    fechaInicio: '2026-03-25',
+    fechaFin: '2026-04-09',
     estaCerrado: false
   },
   {
     id: 'ath_2026_05',
     nombreNomina: 'Nómina Mayo 2026',
-    fechaInicio: '2026-04-20',
-    fechaFin: '2026-05-17',
+    fechaInicio: '2026-04-10',
+    fechaFin: '2026-05-12',
     estaCerrado: false
   },
   {
     id: 'ath_2026_06',
     nombreNomina: 'Nómina Junio 2026',
-    fechaInicio: '2026-05-18',
-    fechaFin: '2026-06-21',
+    fechaInicio: '2026-05-13',
+    fechaFin: '2026-06-14',
     estaCerrado: false
   },
   {
     id: 'ath_2026_07',
     nombreNomina: 'Nómina Julio 2026',
-    fechaInicio: '2026-06-22',
-    fechaFin: '2026-07-19',
+    fechaInicio: '2026-06-15',
+    fechaFin: '2026-07-14',
     estaCerrado: false
   },
   {
     id: 'ath_2026_08',
     nombreNomina: 'Nómina Agosto 2026',
-    fechaInicio: '2026-07-20',
-    fechaFin: '2026-08-23',
+    fechaInicio: '2026-07-15',
+    fechaFin: '2026-08-13',
+    estaCerrado: false
+  },
+  {
+    id: 'ath_2026_09',
+    nombreNomina: 'Nómina Septiembre 2026',
+    fechaInicio: '2026-08-14',
+    fechaFin: '2026-09-14',
+    estaCerrado: false
+  },
+  {
+    id: 'ath_2026_10',
+    nombreNomina: 'Nómina Octubre 2026',
+    fechaInicio: '2026-09-15',
+    fechaFin: '2026-10-16',
+    estaCerrado: false
+  },
+  {
+    id: 'ath_2026_11',
+    nombreNomina: 'Nómina Noviembre 2026',
+    fechaInicio: '2026-10-17',
+    fechaFin: '2026-11-19',
+    estaCerrado: false
+  },
+  {
+    id: 'ath_2026_12',
+    nombreNomina: 'Nómina Diciembre 2026',
+    fechaInicio: '2026-11-20',
+    fechaFin: '2026-12-11',
     estaCerrado: false
   }
 ];

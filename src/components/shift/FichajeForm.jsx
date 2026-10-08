@@ -13,7 +13,6 @@ export default function FichajeForm({ onLogSaved }) {
   const [tipoTurnoId, setTipoTurnoId] = useState('manana');
   const [horaEntrada, setHoraEntrada] = useState('08:00');
   const [horaSalida, setHoraSalida] = useState('16:00');
-  const [horasExtraManuales, setHorasExtraManuales] = useState(0);
   const [esFestivo, setEsFestivo] = useState(false);
   const [notas, setNotas] = useState('');
   
@@ -28,7 +27,7 @@ export default function FichajeForm({ onLogSaved }) {
     if (selectedShift) {
       setHoraEntrada(selectedShift.horaInicio);
       setHoraSalida(selectedShift.horaFin);
-      if (selectedId === 'festivo') setEsFestivo(true);
+      setEsFestivo(selectedShift.esFestivo === true);
     }
   };
 
@@ -43,7 +42,9 @@ export default function FichajeForm({ onLogSaved }) {
   const selectedShiftObj = shiftTypes.find(s => s.id === tipoTurnoId);
   const horasTeoricas = selectedShiftObj ? selectedShiftObj.horasTeoricas : 8;
   const horasExtraAuto = Math.max(0, horasTrabajadasCalculadas - horasTeoricas);
-  const totalHorasExtra = Number(horasExtraManuales) > 0 ? Number(horasExtraManuales) : horasExtraAuto;
+  const totalHorasExtra = tipoTurnoId === 'jornada_adicional'
+    ? Math.max(0, horasTrabajadasCalculadas - (selectedShiftObj?.horasDescansoNoPagadas ?? 0))
+    : horasExtraAuto;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -116,6 +117,9 @@ export default function FichajeForm({ onLogSaved }) {
               </option>
             ))}
           </select>
+          {tipoTurnoId === 'jornada_adicional' && (
+            <small>Se paga toda la jornada como complemento, descontando el descanso no pagado. Si marcas festivo, se aplica solo la tarifa festiva.</small>
+          )}
         </div>
 
         {/* Franja Horaria Entrada / Salida */}

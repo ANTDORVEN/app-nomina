@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/common/Header.jsx';
 import FichajeForm from './components/shift/FichajeForm.jsx';
 import FichajesList from './components/shift/FichajesList.jsx';
@@ -28,17 +28,17 @@ export default function App() {
   const [summary, setSummary] = useState(null);
 
   // Recalcular resumen de nómina cuando cambie el periodo o se modifiquen fichajes
-  const updateSummary = () => {
+  const updateSummary = useCallback(() => {
     const currentPeriod = periods.find(p => p.id === selectedPeriodId) || periods[0];
     if (currentPeriod) {
       const summaryData = calculatePayrollForPeriod(currentPeriod);
       setSummary(summaryData);
     }
-  };
+  }, [selectedPeriodId, periods]);
 
   useEffect(() => {
     updateSummary();
-  }, [selectedPeriodId, periods]);
+  }, [updateSummary]);
 
   const handleLogSaved = () => {
     updateSummary();
@@ -50,8 +50,6 @@ export default function App() {
       setSelectedPeriodId(updatedPeriods[0].id);
     }
   };
-
-  const currentPeriodObj = periods.find(p => p.id === selectedPeriodId);
 
   return (
     <div className="app-layout">

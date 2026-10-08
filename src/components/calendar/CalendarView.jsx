@@ -160,7 +160,9 @@ export default function CalendarView({ onCalendarUpdated }) {
       horaEntradaReal: modalHoraEntrada,
       horaSalidaReal: modalHoraSalida,
       horasTrabajadas: horasCalc,
-      horasExtra: Math.max(0, horasCalc - horasTeoricas),
+      horasExtra: modalShiftId === 'jornada_adicional'
+        ? Math.max(0, horasCalc - (selectedShift?.horasDescansoNoPagadas ?? 0))
+        : Math.max(0, horasCalc - horasTeoricas),
       esFestivo: modalShiftId === 'festivo',
       esPatronAuto: false,
       notas: notasFinales,

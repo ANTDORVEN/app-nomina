@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getPayrollPeriods } from '../../services/shiftService.js';
-import { getStorageItem, setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
+import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import { formatDateSpanish } from '../../utils/dateUtils.js';
 import './TablaPeriodosATH.css';
 
