@@ -27,6 +27,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 16px;
+  text-align: left;
 }
 
 .resumen-period-name {
@@ -48,6 +50,8 @@
   border-radius: 20px;
   font-size: 0.75rem;
   color: var(--primary-100);
+  flex-shrink: 0;
+  max-width: 150px;
 }
 
 .bruto-box {
@@ -116,6 +120,8 @@
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
+  min-width: 0;
+  text-align: left;
 }
 
 @media (min-width: 640px) {
@@ -166,12 +172,39 @@
   font-weight: 700;
   margin-bottom: 12px;
   color: var(--text-main);
+  text-align: left;
+  line-height: 1.5;
 }
 
 .desglose-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
+}
+
+.desglose-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 24px;
+  row-gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.desglose-row > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.desglose-row small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
 }
 
 .desglose-row.subtotal-row {
@@ -179,6 +212,8 @@
   padding-top: 8px;
   margin-top: 4px;
   color: var(--text-main);
+  border-bottom: 0;
+  padding-top: 16px;
 }
 
 .concept-amount.highlight {
@@ -188,6 +223,9 @@
 .concept-amount {
   font-weight: 700;
   color: var(--text-main);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .concept-amount.extra {
@@ -200,4 +238,33 @@
 
 .concept-amount.holiday {
   color: var(--badge-festivo);
+}
+
+@media (max-width: 600px) {
+  .resumen-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .fichajes-badge {
+    max-width: none;
+  }
+
+  .desglose-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 0;
+  }
+
+  .desglose-row .concept-amount {
+    font-size: 1rem;
+    justify-self: end;
+  }
+
+  .metric-item {
+    align-items: flex-start;
+  }
+
+  .metric-value {
+    overflow-wrap: anywhere;
+  }
 }

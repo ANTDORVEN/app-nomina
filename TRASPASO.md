@@ -2,6 +2,16 @@
 
 ## Revisión del 08/10/2026 (prevalece sobre las notas históricas siguientes)
 
+- Aclaración posterior de Antonio: pausa y almuerzo NO pagados; el contador descuenta siempre las pausas y se elimina la elección de pagarlas. Turnos ordinarios: presencial solo por encima de 8 horas netas, incluido turno12 (12h menos 1h de pausa = 3h de exceso). Se conservan las excepciones anteriores de jornada adicional y sábado alterno hasta aclaración expresa.
+- Guardias de 24 horas: Antonio confirma cómputo mensual, sin exceso diario sobre 8h. Se elimina ese exceso diario, se conservan sus horas y se marca la estimación como PARCIAL con cómputo de guardias pendiente. Falta confirmar si usa mes natural o rango ATH, cómo se fija la jornada exigida y cómo se mezclan turnos ordinarios con guardias. Los 168h son un ejemplo, no un umbral fijo. No automatizar el exceso mensual hasta resolverlo. La nocturnidad conserva la lógica anterior; no está validada para esta aclaración. Estas notas sustituyen las decisiones anteriores que permitían pagar pausas.
+- Antonio responde que desconoce el rango exacto del cómputo y cómo se mezclan turnos; esperará a ver la nómina de este mes. Mantener el cálculo mensual pendiente hasta disponer de esa comprobación.
+
+- Fichaje con contador incluido en esta versión: pantalla Mi turno con iniciar (verde), pausa/comida y reanudar (amarillo), terminar (rojo). Guarda las fechas reales de entrada, salida y pausas en una clave local separada; al recargar recupera el turno. Cerrar en pausa termina también esa pausa. El registro manual queda desplegable. Al terminar hay revisión antes de guardar: sugiere mañana/tarde/noche según los inicios configurados, con 90 minutos de margen de entrada anticipada; la sugerencia se puede cambiar. No deduce por sí solo jornada adicional ni festivo. Asigna ATH por la fecha local de entrada, también al cruzar medianoche. No divide jornadas entre periodos.
+- Las pausas del contador se descuentan siempre conforme a lo indicado por Antonio. El total entre entrada y salida va a horasTrabajadas y las pausas registradas se añaden a horasDescansoNoPagadas; conserva precisión temporal hasta redondear importes. No suma además el descanso por defecto del tipo. Al editar un registro del contador se conserva ese descuento aunque cambie el tipo. Las pausas quedan visibles en el listado y sus fechas incluidas en el JSON del fichaje guardado; el contador todavía activo permanece solo en ese navegador y no forma parte de la copia de fichajes.
+- Si hay fichaje en la misma fecha pide confirmar la sustitución y conserva el registro anterior dentro de fichajeSustituido. Los fallos de escritura mantienen el contador pendiente; repetir el guardado no duplica la jornada. Detecta cambios de otra ventana antes de actuar. Se probaron inicio, pausa, recarga, reanudación, cierre y guardado en navegador local, además de pruebas automatizadas de turno nocturno, colisiones y fallos de almacenamiento. Las reglas de nocturnidad existentes no cambian.
+
+- Mejoras incluidas en esta versión: edición desde el listado en Diario y Resumen, con guardado y cancelación. La fecha e identidad del fichaje se conservan, al igual que sus datos adicionales; un fallo de almacenamiento no muestra éxito. El resumen separa conceptos, fórmulas e importes en móvil y utiliza comas decimales.
+
 - Fecha de ingreso confirmada por Antonio: 11/11/2020. Se corrige la fecha inicial 01/11/2021, conservando otras fechas personalizadas.
 - La nómina de septiembre de 2026 mantiene salario base, convenio, prorrata y antigüedad con 30 días de vacaciones. Las vacaciones ya no se descuentan del bloque fijo. El tratamiento de bajas, paternidad y asuntos propios sigue pendiente de revisión; no se ha validado con esta nómina.
 - Los importes de referencia de 30 días son 1.253,26 €, 167,52 €, 247,24 € y 62,66 €. Se conservan decimales al dividir entre 30 y se redondea cada concepto antes de sumar. La regla histórica de días liquidables / 30 se mantiene; falta contrastar meses completos de 28, 29 y 31 días.
@@ -174,3 +184,4 @@ Idea: adaptar la app para que cualquier usuario (no solo TES de ATH) pueda confi
 
 ---
 *Documento generado el 08/08/2026 (actualizado 01/09/2026) para servir de contexto a cualquier IA o persona que retome el proyecto.*
+

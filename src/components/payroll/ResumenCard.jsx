@@ -2,6 +2,8 @@ import React from 'react';
 import { formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import './ResumenCard.css';
 
+const formatAmount = value => Number(value).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 /**
  * ResumenCard.jsx - Panel de Resumen Financiero ATH con Desglose de Doble Bloque (Mes Natural + Tabla ATH).
  */
@@ -61,7 +63,7 @@ export default function ResumenCard({ summary }) {
 
       {/* Importe Bruto Estimado Principal */}
       <div className="bruto-box">
-        <span className="bruto-label">ESTIMACIÓN BRUTA TOTAL NÓMINA ATH</span>
+        <span className="bruto-label">{summary.computoGuardiasPendiente ? 'ESTIMACIÓN PARCIAL · CÓMPUTO DE GUARDIAS PENDIENTE' : 'ESTIMACIÓN BRUTA TOTAL NÓMINA ATH'}</span>
         <div className="bruto-amount">
           {estimacionBrutoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
         </div>
@@ -71,6 +73,7 @@ export default function ResumenCard({ summary }) {
       </div>
 
       {/* Rejilla de Indicadores de Horas */}
+      {summary.computoGuardiasPendiente && <p role="status" className="live-conflict">Hay {formatHoursToHHMM(summary.horasGuardiasPendientesComputo)} de guardias de 24 horas registradas. Su exceso presencial mensual está pendiente de calcular: falta concretar el rango y las horas exigidas. Este importe es parcial.</p>}
       <div className="metrics-grid">
         <div className="metric-item">
           <span className="metric-icon">📅</span>
@@ -113,24 +116,24 @@ export default function ResumenCard({ summary }) {
         </h3>
         <div className="desglose-list">
           <div className="desglose-row">
-            <span>Salario Base ({(precioBaseDia * 30).toFixed(2)}€ × {diasMesNatural}/30)</span>
-            <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.salarioBase.toFixed(2) : '0.00'} €</span>
+            <span>Salario base<small>{formatAmount(precioBaseDia * 30)} € × {diasMesNatural}/30 días</small></span>
+            <span className="concept-amount">+{conceptosDiarios ? formatAmount(conceptosDiarios.salarioBase) : '0.00'} €</span>
           </div>
           <div className="desglose-row">
-            <span>Plus Convenio ({(precioPlusDia * 30).toFixed(2)}€ × {diasMesNatural}/30)</span>
-            <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.plusConvenio.toFixed(2) : '0.00'} €</span>
+            <span>Plus convenio<small>{formatAmount(precioPlusDia * 30)} € × {diasMesNatural}/30 días</small></span>
+            <span className="concept-amount">+{conceptosDiarios ? formatAmount(conceptosDiarios.plusConvenio) : '0.00'} €</span>
           </div>
           <div className="desglose-row">
-            <span>Prorrata Paga Extra ({(precioProrrataDia * 30).toFixed(2)}€ × {diasMesNatural}/30)</span>
-            <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.prorrataPagas.toFixed(2) : '0.00'} €</span>
+            <span>Prorrata de pagas extras<small>{formatAmount(precioProrrataDia * 30)} € × {diasMesNatural}/30 días</small></span>
+            <span className="concept-amount">+{conceptosDiarios ? formatAmount(conceptosDiarios.prorrataPagas) : '0.00'} €</span>
           </div>
           <div className="desglose-row">
-            <span>Antigüedad ({antiguedadBase.toFixed(2)}€ × {diasMesNatural}/30)</span>
-            <span className="concept-amount">+{conceptosDiarios ? conceptosDiarios.antiguedad.toFixed(2) : '0.00'} €</span>
+            <span>Antigüedad<small>{formatAmount(antiguedadBase)} € × {diasMesNatural}/30 días</small></span>
+            <span className="concept-amount">+{conceptosDiarios ? formatAmount(conceptosDiarios.antiguedad) : '0.00'} €</span>
           </div>
           <div className="desglose-row subtotal-row">
             <strong>Subtotal Bloque Fijo ({mesNatural.nombreMes} - {diasMesNatural} días)</strong>
-            <strong className="concept-amount highlight">+{desgloseImportes.subtotalFijoMesNatural.toFixed(2)} €</strong>
+            <strong className="concept-amount highlight">+{formatAmount(desgloseImportes.subtotalFijoMesNatural)} €</strong>
           </div>
         </div>
 
@@ -140,34 +143,34 @@ export default function ResumenCard({ summary }) {
         </h3>
         <div className="desglose-list">
           <div className="desglose-row">
-            <span>J.Complement / Excesos Presenciales ({formatHoursToHHMM(totalHorasJComplement)} × {precioJComplement.toFixed(2)}€/h)</span>
-            <span className="concept-amount">+{desgloseImportes.jornadaComplementaria.toFixed(2)} €</span>
+            <span>Jornada complementaria<small>{formatHoursToHHMM(totalHorasJComplement)} × {formatAmount(precioJComplement)} €/h</small></span>
+            <span className="concept-amount">+{formatAmount(desgloseImportes.jornadaComplementaria)} €</span>
           </div>
 
           {desgloseImportes.horasExtraordinarias > 0 && (
             <div className="desglose-row">
-              <span>Horas Extraordinarias / Festivas ({formatHoursToHHMM(totalHorasFestivasExtra)} × {precioHorasExtra.toFixed(2)}€/h)</span>
-              <span className="concept-amount extra">+{desgloseImportes.horasExtraordinarias.toFixed(2)} €</span>
+              <span>Horas extraordinarias / festivas<small>{formatHoursToHHMM(totalHorasFestivasExtra)} × {formatAmount(precioHorasExtra)} €/h</small></span>
+              <span className="concept-amount extra">+{formatAmount(desgloseImportes.horasExtraordinarias)} €</span>
             </div>
           )}
 
           {totalHorasNocturnas > 0 && (
             <div className="desglose-row">
-              <span>Plus Nocturnidad ({formatHoursToHHMM(totalHorasNocturnas)} × {precioNocturna.toFixed(2)}€/h)</span>
-              <span className="concept-amount night">+{desgloseImportes.nocturnidad.toFixed(2)} €</span>
+              <span>Plus de nocturnidad<small>{formatHoursToHHMM(totalHorasNocturnas)} × {formatAmount(precioNocturna)} €/h</small></span>
+              <span className="concept-amount night">+{formatAmount(desgloseImportes.nocturnidad)} €</span>
             </div>
           )}
 
           {totalHorasDescansoDescontadas > 0 && (
             <div className="desglose-row break-discount-row">
-              <span>☕ Descanso no remunerado ({formatHoursToHHMM(totalHorasDescansoDescontadas)} en turnos 12h)</span>
+              <span>☕ Descanso no remunerado ({formatHoursToHHMM(totalHorasDescansoDescontadas)})</span>
               <span className="concept-amount discount">-0.00 € (No abonable)</span>
             </div>
           )}
 
           <div className="desglose-row subtotal-row">
             <strong>Subtotal Bloque Variable (Tabla ATH)</strong>
-            <strong className="concept-amount highlight">+{desgloseImportes.subtotalVariableATH.toFixed(2)} €</strong>
+            <strong className="concept-amount highlight">+{formatAmount(desgloseImportes.subtotalVariableATH)} €</strong>
           </div>
         </div>
       </div>

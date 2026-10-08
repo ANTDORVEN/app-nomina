@@ -2,7 +2,7 @@ import { beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULT_CONFIG, DEFAULT_SHIFT_TYPES } from '../src/models/defaultData.js';
 import { calculatePayrollForPeriod } from '../src/services/payrollService.js';
-import { getConfig, getAllTimeLogs, saveTimeLog } from '../src/services/shiftService.js';
+import { getConfig, getAllTimeLogs, saveTimeLog, updateTimeLog } from '../src/services/shiftService.js';
 
 const period = { fechaInicio: '2026-08-14', fechaFin: '2026-09-14' };
 let values;
@@ -20,6 +20,23 @@ beforeEach(() => {
     setItem: (key, value) => values.set(key, value)
   };
   seed();
+});
+
+test('turno de 12 horas con una hora de pausa suma solo 3 horas presenciales', () => {
+  seed(DEFAULT_CONFIG, [{ fecha: '2026-08-20', tipoTurnoId: 'turno12', horasTrabajadas: 12 }]);
+  const result = calculatePayrollForPeriod(period);
+  assert.equal(result.totalHorasTrabajadas, 11);
+  assert.equal(result.totalHorasJComplement, 3);
+  assert.equal(result.desgloseImportes.jornadaComplementaria, 37.08);
+});
+
+test('guardia de 24 horas no genera 16 horas por exceso diario y deja el cómputo pendiente', () => {
+  seed(DEFAULT_CONFIG, [{ fecha: '2026-08-20', tipoTurnoId: 'guardia24', horasTrabajadas: 24, horasDescansoNoPagadas: 1 }]);
+  const result = calculatePayrollForPeriod(period);
+  assert.equal(result.totalHorasTrabajadas, 23);
+  assert.equal(result.totalHorasJComplement, 0);
+  assert.equal(result.computoGuardiasPendiente, true);
+  assert.equal(result.horasGuardiasPendientesComputo, 23);
 });
 
 test('septiembre completo de vacaciones conserva los cuatro conceptos de la nómina', () => {
@@ -109,4 +126,39 @@ test('reclasificar un fichaje conserva su identidad, notas y el resto de jornada
   assert.equal(log.notas, 'Cambio guardia Dani');
   assert.equal(log.companeroIntercambio, 'Dani');
   assert.equal(log.horasTrabajadas, 8.5);
+});
+
+test('editar una jornada recalcula el complemento y protege fecha e identidad', () => {
+  seed(DEFAULT_CONFIG, [{ id: 'dani', fecha: '2026-08-29', tipoTurnoId: 'manana',
+    horasTrabajadas: 8.5, createdAt: '2026-08-01', companeroIntercambio: 'Dani', notas: 'Original' }]);
+  assert.equal(calculatePayrollForPeriod(period).totalHorasJComplement, 0.5);
+  assert.equal(updateTimeLog('dani', { id: 'otra', fecha: '2026-08-28', createdAt: 'otra',
+    tipoTurnoId: 'jornada_adicional', notas: 'Corregido' }), true);
+  const [log] = getAllTimeLogs();
+  assert.equal(log.id, 'dani');
+  assert.equal(log.fecha, '2026-08-29');
+  assert.equal(log.createdAt, '2026-08-01');
+  assert.equal(log.companeroIntercambio, 'Dani');
+  assert.equal(log.notas, 'Corregido');
+  assert.equal(calculatePayrollForPeriod(period).totalHorasJComplement, 8.5);
+});
+
+test('editar un fichaje inexistente no crea una jornada nueva', () => {
+  assert.equal(updateTimeLog('inexistente', { horasTrabajadas: 10 }), false);
+  assert.deepEqual(getAllTimeLogs(), []);
+});
+
+test('un error de almacenamiento al editar conserva el fichaje original', () => {
+  seed(DEFAULT_CONFIG, [{ id: 'original', fecha: '2026-08-29', horasTrabajadas: 8 }]);
+  values.set('tes_nomina_periods', '[]');
+  const original = values.get('tes_nomina_time_logs');
+  localStorage.setItem = () => { throw new Error('Sin espacio'); };
+  const previousError = console.error;
+  console.error = () => {};
+  try {
+    assert.equal(updateTimeLog('original', { horasTrabajadas: 10 }), false);
+    assert.equal(values.get('tes_nomina_time_logs'), original);
+  } finally {
+    console.error = previousError;
+  }
 });

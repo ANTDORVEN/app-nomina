@@ -90,6 +90,7 @@ export function calculatePayrollForPeriod(period) {
   let totalHorasFestivasExtra = 0; // Horas trabajadas en festivos (21,63 €/h)
   let totalHorasNocturnas = 0;
   let totalDiasFestivos = 0;
+  let horasGuardiasPendientesComputo = 0;
 
   periodLogs.forEach(log => {
     const shiftType = shiftTypes.find(t => t.id === log.tipoTurnoId);
@@ -104,16 +105,18 @@ export function calculatePayrollForPeriod(period) {
     // Comprobar si el día es FESTIVO
     const isFestivoDay = log.esFestivo === true || (shiftType && (shiftType.id === 'festivo' || shiftType.id === 'domingo_alterno' || shiftType.esFestivo === true));
 
-    if (isFestivoDay) {
+    if (log.tipoTurnoId === 'guardia24') {
+      // Falta concretar rango y jornada exigida; nunca aplicar exceso diario.
+      horasGuardiasPendientesComputo += horasLiquidadasDia;
+    } else if (isFestivoDay) {
       // 🟢 CASO FESTIVO: Horas Extraordinarias / Festivas (21,63 €/h)
       totalHorasFestivasExtra += horasLiquidadasDia;
       totalDiasFestivos += 1;
     } else {
       // 🔵 CASO DÍA NORMAL (No Festivo): J.Complement (12,36 €/h)
       const isSaturdayDay = shiftType && shiftType.id === 'sabado_alterno';
-      const isTurno12 = log.tipoTurnoId === 'turno12';
 
-      if (isSaturdayDay || isTurno12 || log.tipoTurnoId === 'jornada_adicional') {
+      if (isSaturdayDay || log.tipoTurnoId === 'jornada_adicional') {
         totalHorasJComplement += horasLiquidadasDia;
       } else {
         const excesoDia = Math.max(0, horasLiquidadasDia - 8);
@@ -172,6 +175,8 @@ export function calculatePayrollForPeriod(period) {
     totalHorasFestivasExtra,
     totalHorasNocturnas,
     totalDiasFestivos,
+    horasGuardiasPendientesComputo,
+    computoGuardiasPendiente: periodLogs.some(log => log.tipoTurnoId === 'guardia24'),
     conceptosDiarios: {
       salarioBase: Math.round(importeSalarioBase * 100) / 100,
       plusConvenio: Math.round(importePlusConvenio * 100) / 100,

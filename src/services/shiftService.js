@@ -161,3 +161,20 @@ export function deleteTimeLog(logId) {
   setStorageItem(STORAGE_KEYS.TIME_LOGS, logs);
   return logs;
 }
+
+/** Edita una jornada existente sin cambiar su fecha ni su identidad. */
+export function updateTimeLog(logId, changes) {
+  const logs = getAllTimeLogs();
+  const index = logs.findIndex(log => log.id === logId || log.fecha === logId);
+  if (index < 0) return false;
+  const current = logs[index];
+  logs[index] = {
+    ...current,
+    ...changes,
+    id: current.id,
+    fecha: current.fecha,
+    createdAt: current.createdAt,
+    updatedAt: new Date().toISOString()
+  };
+  return setStorageItem(STORAGE_KEYS.TIME_LOGS, logs);
+}

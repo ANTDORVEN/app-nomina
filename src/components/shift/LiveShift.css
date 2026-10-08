@@ -1,0 +1,28 @@
+.live-shift { text-align: left; margin-bottom: 16px; }
+.live-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.live-heading h2 { margin: 0; font-size: 1.4rem; }
+.live-status { padding: 6px 10px; border-radius: 20px; background: #153c32; color: #a7f3d0; font-size: .8rem; }
+.live-status.paused { background: #493d17; color: #fde68a; }
+.live-date, .live-clock-label, .live-hint, .live-period { color: var(--text-muted); font-size: .85rem; line-height: 1.5; }
+.live-date { margin: 8px 0 24px; }
+.live-clock { text-align: center; font-size: clamp(2.2rem, 9vw, 3.8rem); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+.live-clock-label { text-align: center; margin-top: 0; }
+.live-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+.live-metrics span { background: var(--bg-app); padding: 12px; border-radius: 10px; font-size: .8rem; color: var(--text-muted); }
+.live-metrics strong { display: block; margin-top: 5px; color: var(--text-main); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.live-buttons { display: grid; gap: 12px; margin: 22px 0 16px; }
+.live-buttons button { min-height: 54px; padding: 14px; border: 0; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+.live-start { background: #16844c; color: white; }
+.live-pause { background: #f4c542; color: #28210b; }
+.live-stop { background: #c83742; color: white; }
+.live-buttons button:hover { filter: brightness(1.12); }
+.live-buttons button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.live-review { display: grid; gap: 16px; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px; }
+.live-review h3, .live-review p { margin: 0; }
+.live-review input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; }
+.live-review .checkbox-label { min-height: 44px; }
+.live-conflict, .live-error { padding: 12px; border: 1px solid #f59e0b; border-radius: 8px; color: #fde68a; font-size: .9rem; }
+.live-conflict label { margin-top: 10px; }
+.live-review button:disabled { opacity: .5; cursor: not-allowed; }
+.manual-fichaje summary { cursor: pointer; min-height: 48px; padding: 12px; box-sizing: border-box; color: var(--text-muted); text-align: left; }
+.manual-fichaje[open] summary { margin-bottom: 10px; }

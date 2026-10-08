@@ -38,11 +38,11 @@ export default function FichajeForm({ onLogSaved }) {
   }, [fecha]);
 
   // Cálculo en tiempo real de las horas trabajadas
-  const horasTrabajadasCalculadas = calculateWorkedHours(horaEntrada, horaSalida);
+  const horasTrabajadasCalculadas = tipoTurnoId === 'guardia24' && horaEntrada === horaSalida
+    ? 24 : calculateWorkedHours(horaEntrada, horaSalida);
   const selectedShiftObj = shiftTypes.find(s => s.id === tipoTurnoId);
-  const horasTeoricas = selectedShiftObj ? selectedShiftObj.horasTeoricas : 8;
-  const horasExtraAuto = Math.max(0, horasTrabajadasCalculadas - horasTeoricas);
-  const totalHorasExtra = tipoTurnoId === 'jornada_adicional'
+  const horasExtraAuto = Math.max(0, horasTrabajadasCalculadas - (selectedShiftObj?.horasDescansoNoPagadas ?? 0) - 8);
+  const totalHorasExtra = tipoTurnoId === 'guardia24' ? 0 : tipoTurnoId === 'jornada_adicional'
     ? Math.max(0, horasTrabajadasCalculadas - (selectedShiftObj?.horasDescansoNoPagadas ?? 0))
     : horasExtraAuto;
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/common/Header.jsx';
 import FichajeForm from './components/shift/FichajeForm.jsx';
+import LiveShift from './components/shift/LiveShift.jsx';
 import FichajesList from './components/shift/FichajesList.jsx';
 import ResumenCard from './components/payroll/ResumenCard.jsx';
 import PeriodSelector from './components/payroll/PeriodSelector.jsx';
@@ -58,7 +59,12 @@ export default function App() {
       <main className="main-content">
         {activeTab === 'fichaje' && (
           <div className="view-grid">
-            <FichajeForm onLogSaved={handleLogSaved} />
+            <div>
+              <LiveShift onLogSaved={handleLogSaved} />
+              <details className="manual-fichaje"><summary>Registrar una jornada manualmente</summary>
+                <FichajeForm onLogSaved={handleLogSaved} />
+              </details>
+            </div>
             <div>
               <PeriodSelector 
                 periods={periods} 
@@ -68,6 +74,7 @@ export default function App() {
               <FichajesList 
                 logs={summary ? summary.logs : []} 
                 onDeleteLog={updateSummary} 
+                onLogUpdated={updateSummary}
               />
             </div>
           </div>
@@ -88,6 +95,7 @@ export default function App() {
             <FichajesList 
               logs={summary ? summary.logs : []} 
               onDeleteLog={updateSummary} 
+              onLogUpdated={updateSummary}
             />
           </div>
         )}
