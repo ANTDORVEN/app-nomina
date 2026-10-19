@@ -18,6 +18,7 @@
  */
 
 import { getConfig, getAllTimeLogs, getShiftTypes } from './shiftService.js';
+import { payrollLogsWithRealTime } from './realTimeService.js';
 import { isDateInPeriod, getNaturalMonthRangeForPeriod } from '../utils/dateUtils.js';
 
 const roundMoney = value => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -78,7 +79,7 @@ export function calculatePayrollForPeriod(period) {
   // -------------------------------------------------------------
   // PASO 2: BLOQUE VARIABLE - Filtrado por Rango Tabla ATH (ej: 15/07 al 13/08)
   // -------------------------------------------------------------
-  const periodLogs = allLogs.filter(log => 
+  const periodLogs = payrollLogsWithRealTime(allLogs).filter(log =>
     isDateInPeriod(log.fecha, period.fechaInicio, period.fechaFin)
   );
 

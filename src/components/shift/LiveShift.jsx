@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getShiftTypes, getAllTimeLogs, getPeriodForDate } from '../../services/shiftService.js';
-import { changeLiveShift, getLiveShift, LIVE_SHIFT_KEY, liveDurations, liveShiftLog, saveLiveShift, suggestShift } from '../../services/liveShiftService.js';
+import { getShiftTypes, getPeriodForDate } from '../../services/shiftService.js';
+import { changeLiveShift, getLiveShift, LIVE_SHIFT_KEY, liveDurations, liveShiftLog } from '../../services/liveShiftService.js';
+import { getRealTimeRecords, saveRealTimeRecord, scheduledWorkForDate } from '../../services/realTimeService.js';
+import { setStorageItem } from '../../services/storageService.js';
+import PayrollChoice from './PayrollChoice.jsx';
+import './RealTimeRecords.css';
 import { formatDateToISO, formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import './LiveShift.css';
 
@@ -9,13 +13,13 @@ const clock = ms => {
   return `${String(Math.floor(seconds / 3600)).padStart(2, '0')}:${String(Math.floor(seconds / 60) % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 };
 
-export default function LiveShift({ onLogSaved }) {
+export default function LiveShift({ onLogSaved, onAddIncident, onViewIncidents }) {
   const [session, setSession] = useState(getLiveShift);
   const [now, setNow] = useState(Date.now);
   const [typeId, setTypeId] = useState('');
   const [festive, setFestive] = useState(false);
   const [notes, setNotes] = useState('');
-  const [replace, setReplace] = useState(false);
+  const [payrollChoice, setPayrollChoice] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const types = getShiftTypes().filter(type => !type.esAusencia && type.horasTeoricas > 0);
@@ -30,22 +34,26 @@ export default function LiveShift({ onLogSaved }) {
   const finished = Boolean(session?.endedAt);
   const date = formatDateToISO(new Date(session?.startedAt ?? now));
   const period = getPeriodForDate(date);
-  const chosenId = typeId || (session ? suggestShift(session, types) : 'manana');
-  const existing = finished && getAllTimeLogs().find(log => log.fecha === date && log.id !== session.id);
+  const scheduled = scheduledWorkForDate(date);
+  const existingRecord = getRealTimeRecords().find(record => record.fecha === date);
+  const chosenId = typeId || existingRecord?.tipoTurnoId || scheduled?.tipoTurnoId || 'jornada_adicional';
+  const countInPayroll = payrollChoice ?? existingRecord?.contarEnNomina ?? !scheduled;
 
   function act(action) {
     try {
       const updated = changeLiveShift(session, action);
       setSession(updated); setNow(Date.now()); setError(''); setMessage('');
-      if (action === 'start') { setTypeId(''); setNotes(''); setFestive(false); setReplace(false); }
+      if (action === 'start') { setTypeId(''); setNotes(''); setFestive(false); setPayrollChoice(null); }
     } catch (err) { setError(err.message); setSession(getLiveShift()); }
   }
   function save(event) {
     event.preventDefault();
     try {
       const log = liveShiftLog(session, types.find(type => type.id === chosenId), true, festive, notes);
-      saveLiveShift(session, log, replace);
-      setSession(null); setMessage(`Turno del ${formatDateSpanish(date)} guardado${period ? ` en ${period.nombreNomina}` : ''}.`);
+      if (JSON.stringify(getLiveShift()) !== JSON.stringify(session)) throw new Error('El turno ha cambiado en otra ventana. Revisa el registro.');
+      saveRealTimeRecord({ ...log, contarEnNomina: countInPayroll });
+      if (!setStorageItem(LIVE_SHIFT_KEY, null)) throw new Error('Horas guardadas. Pulsa guardar otra vez para cerrar el contador pendiente.');
+      setSession(null); setMessage(`Turno del ${formatDateSpanish(date)} guardado: ${countInPayroll ? `cuenta en nómina${period ? ` (${period.nombreNomina})` : ''}` : 'solo informativo'}.`);
       setError(''); onLogSaved?.(log);
     } catch (err) { setError(err.message); setSession(getLiveShift()); }
   }
@@ -66,15 +74,20 @@ export default function LiveShift({ onLogSaved }) {
     {finished && <form className="live-review" onSubmit={save}>
       <h3>Revisar y guardar</h3>
       <p>Entrada: {new Date(session.startedAt).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}<br />Salida: {new Date(session.endedAt).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</p>
-      <div className="form-group"><label htmlFor="live-type">Turno sugerido por la hora de entrada</label><select id="live-type" value={chosenId} onChange={e => setTypeId(e.target.value)}>{types.map(type => <option key={type.id} value={type.id}>{type.nombre}</option>)}</select></div>
+      <div className="form-group"><label htmlFor="live-type">Tipo de turno para el cálculo</label><select id="live-type" value={chosenId} onChange={e => setTypeId(e.target.value)}>{types.map(type => <option key={type.id} value={type.id}>{type.nombre}</option>)}</select></div>
       <p className="live-hint">Para un cambio que debas cobrar completo, elige Jornada adicional. Puedes cambiar el turno sugerido.</p>
       <p className="live-hint">Las pausas y el almuerzo se descuentan del tiempo pagado.</p>
       <label className="checkbox-label"><input type="checkbox" checked={festive} onChange={e => setFestive(e.target.checked)} />Jornada festiva</label>
       <p>Tiempo pagado: <strong>{formatHoursToHHMM(duration.active / 3600000)}</strong></p>
       <div className="form-group"><label htmlFor="live-notes">Notas (opcional)</label><input id="live-notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Cambio con un compañero…" /></div>
-      {existing && <div className="live-conflict"><p>Ya tienes un fichaje el {formatDateSpanish(date)}: {existing.horaEntradaReal}–{existing.horaSalidaReal}. Se conserva hasta que confirmes su sustitución.</p><label className="checkbox-label"><input type="checkbox" checked={replace} onChange={e => setReplace(e.target.checked)} />Sustituir ese fichaje por este turno</label></div>}
-      <button className="submit-btn" disabled={Boolean(existing && !replace)}>Guardar turno</button>
+      <PayrollChoice value={countInPayroll} onChange={setPayrollChoice} hasScheduledWork={Boolean(scheduled)} />
+      {existingRecord && <p className="live-hint">Ya hay horas reales de este día. Al guardar se actualizará ese registro.</p>}
+      <button className="submit-btn">Guardar turno</button>
     </form>}
+    <div className="turno-incidents">
+      <button type="button" onClick={onAddIncident}>📝 Añadir incidencia</button>
+      <button type="button" onClick={onViewIncidents}>Ver incidencias</button>
+    </div>
     <p className="live-period">{period ? `Nómina: ${period.nombreNomina}` : 'Sin periodo ATH configurado para esta fecha'}</p>
     {error && <p role="alert" className="live-error">{error}</p>}
     {message && <p role="status" className="alert-success">{message}</p>}

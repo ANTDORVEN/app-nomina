@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { getConfig, saveConfig, getAllTimeLogs, getPayrollPeriods, getShiftTypes } from '../../services/shiftService.js';
 import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
+import { getIncidents, validateIncidentBackup } from '../../services/incidentService.js';
+import { getRealTimeRecords, validateRealTimeBackup } from '../../services/realTimeService.js';
+import { getFamilyData, validateFamilyData } from '../../services/familyService.js';
 import './ConfigView.css';
 
 /**
@@ -76,6 +79,9 @@ export default function ConfigView({ onConfigSaved }) {
       periods: getPayrollPeriods(),
       shiftTypes: getShiftTypes(),
       timeLogs: getAllTimeLogs(),
+      incidents: getIncidents(),
+      realTimeRecords: getRealTimeRecords(),
+      familyCalendar: getFamilyData(),
       exportedAt: new Date().toISOString()
     };
   };
@@ -182,6 +188,25 @@ export default function ConfigView({ onConfigSaved }) {
   };
 
   const applyImportedData = (imported) => {
+    const familyCalendar = imported.familyCalendar === undefined ? undefined : validateFamilyData(imported.familyCalendar);
+    const realTimeRecords = imported.realTimeRecords === undefined ? undefined
+      : validateRealTimeBackup(imported.realTimeRecords, Array.isArray(imported.shiftTypes) ? imported.shiftTypes : undefined);
+    // Las copias antiguas sin incidencias conservan las ya guardadas.
+    if (imported.incidents !== undefined) {
+      const incidents = validateIncidentBackup(imported.incidents);
+      if (!setStorageItem(STORAGE_KEYS.INCIDENTS, incidents)) {
+        alert('No se han podido restaurar las incidencias. Los datos anteriores se conservan.');
+        return;
+      }
+    }
+    if (realTimeRecords !== undefined && !setStorageItem(STORAGE_KEYS.REAL_TIME_RECORDS, realTimeRecords)) {
+      alert('No se han podido restaurar las horas reales.');
+      return;
+    }
+    if (familyCalendar !== undefined && !setStorageItem(STORAGE_KEYS.FAMILY_CALENDAR, familyCalendar)) {
+      alert('No se ha podido restaurar el calendario familiar.');
+      return;
+    }
     if (imported.config) setStorageItem(STORAGE_KEYS.CONFIG, imported.config);
     if (imported.periods) setStorageItem(STORAGE_KEYS.PERIODS, imported.periods);
     if (imported.shiftTypes) setStorageItem(STORAGE_KEYS.SHIFT_TYPES, imported.shiftTypes);

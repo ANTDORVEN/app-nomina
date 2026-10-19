@@ -3,11 +3,12 @@ import { formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import { getShiftTypes, deleteTimeLog } from '../../services/shiftService.js';
 import './FichajesList.css';
 import FichajeEditor from './FichajeEditor.jsx';
+import { deleteRealTimeRecord } from '../../services/realTimeService.js';
 
 /**
  * FichajesList.jsx - Listado de turnos fichados en el período seleccionado con formato visual 'Xh Ymin'.
  */
-export default function FichajesList({ logs, onDeleteLog, onLogUpdated }) {
+export default function FichajesList({ logs, onDeleteLog, onLogUpdated, onEditRealRecord }) {
   const shiftTypes = getShiftTypes();
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState('');
@@ -73,6 +74,7 @@ export default function FichajesList({ logs, onDeleteLog, onLogUpdated }) {
                 {log.esFestivo && (
                   <span className="tag festivo-tag">Festivo</span>
                 )}
+                {log.registroReal && <span className="tag extra-tag">💶 Añadido manualmente · horas reales</span>}
                 {log.registroEnVivo && <p className="log-notes">Pausas registradas: {formatHoursToHHMM(log.registroEnVivo.pauses.reduce((total, pause) => total + (pause.end - pause.start), 0) / 3600000)} · Descontadas: {formatHoursToHHMM(log.horasDescansoNoPagadas ?? 0)}</p>}
 
                 {log.notas && (
@@ -82,10 +84,15 @@ export default function FichajesList({ logs, onDeleteLog, onLogUpdated }) {
 
               <div className="log-actions">
               <button type="button" aria-label={`Editar fichaje del ${formatDateSpanish(log.fecha)}`}
-                onClick={() => { setMessage(''); setEditingId(log.id || log.fecha); }}>Editar</button>
+                onClick={() => { setMessage(''); if (log.registroReal) onEditRealRecord?.(log.fecha); else setEditingId(log.id || log.fecha); }}>Editar</button>
               <button type="button"
                 className="log-delete-btn"
-                onClick={() => handleDelete(log.id || log.fecha)}
+                onClick={() => {
+                  if (!log.registroReal) { handleDelete(log.id || log.fecha); return; }
+                  if (!window.confirm('¿Borrar las horas reales? Se mantendrá el cuadrante original y se recalculará la nómina.')) return;
+                  try { deleteRealTimeRecord(log.fecha); onLogUpdated?.(); }
+                  catch (err) { setMessage(err.message); }
+                }}
                 title="Eliminar fichaje"
               >
                 Eliminar

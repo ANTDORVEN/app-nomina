@@ -47,6 +47,12 @@ export default function Header({ activeTab, setActiveTab }) {
           >
             ⚙️ Ajustes / Tarifas
           </button>
+          <button
+            className={`nav-btn ${activeTab === 'incidencias' ? 'active' : ''}`}
+            onClick={() => setActiveTab('incidencias')}
+          >
+            📝 Incidencias
+          </button>
         </nav>
       </div>
     </header>

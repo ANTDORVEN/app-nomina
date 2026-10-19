@@ -1,5 +1,43 @@
 # TES Control & Nómina — Documento de Traspaso del Proyecto
 
+## Versión aprobada para publicar — 20/10/2026
+
+- Antonio aprueba publicar el conjunto de cambios: inicio con siete tarjetas grandes, navegación por secciones, incidencias desde fichaje y registro, horas reales con inclusión opcional en nómina y calendario familiar mensual con nombres, fondos por persona, coincidencias de libres en amarillo y creador visual de cadencias.
+- Copia de seguridad del móvil exportada por Antonio antes de publicar. Los datos introducidos en localhost son pruebas y no deben trasladarse al móvil ni incluirse como datos iniciales. La publicación solo lleva código; se conserva el almacenamiento del navegador en el mismo dominio.
+- Comprobaciones finales: 42 pruebas correctas, lint sin advertencias y build correcto. Las pruebas de navegador aislado verificaron navegación, formularios, generación/edición de cadencias, coincidencias de descanso y adaptación a móvil. Las referencias siguientes a solo local o pendiente de revisión son el historial de esta misma versión, anterior a esta autorización.
+
+## Inicio y calendario familiar — 19/10/2026, versión local
+
+- Coincidencias de descanso: fondo amarillo y estrella solo cuando el cuadrante propio tiene tipo libre y el turno de pareja también es libre. Los días sin datos, vacaciones u otras ausencias no se interpretan como libre. La leyenda y la descripción accesible indican Ambos libres. Sin cambios en datos ni nómina.
+
+- Ajuste visual del 20/10: Antonio elige mantener vista mensual, con nombre y fondo por persona. Se muestran bloques azul/rosa con nombre y turno escrito completo; desaparecen letras sueltas y guiones, y los días de otros meses quedan vacíos. Los días sin datos no se marcan como libres. El nombre propio (Antonio por defecto, compatible con datos anteriores) y el de la pareja se editan al pie del calendario. Sin cambios en turnos ni cálculo.
+
+- Ajuste posterior aprobado en local: los siete accesos del inicio usan la misma tarjeta grande. Se elimina la distinción de accesos secundarios pequeños. El creador pasa a CadenceBuilder con tres pasos: elegir base (11 días, semana de mañanas o desde cero), tarjetas de días que se pueden tocar para cambiar tipo/horas, mover/quitar días y botones para añadir un turno; finalmente nombre y guardado. Se mantienen el servicio y los formatos guardados. Probado en navegador aislado: siete tarjetas de igual altura, edición de horas en una tarjeta, añadir un libre, guardar una cadencia sin modificar los turnos ya aplicados.
+
+- Navegación gestionada por AppNavigation, con HomeView y siete accesos grandes: Fichar, Calendario Anual, Resumen, Familiar, Incidencias, Tabla ATH y Ajustes. Cabecera de cada sección con Volver al inicio; sin las pestañas superiores. Las pantallas visitadas permanecen montadas y ocultas para conservar formularios al volver. El inicio no deja un bloque vacío debajo.
+- Calendario familiar mensual con los turnos propios leídos de getAllTimeLogs, sin duplicarlos, y turnos de la pareja almacenados aparte en tes_nomina_family_calendar. No afecta a payrollService. Día a día: tipo, horas editables para reducción, libre, notas, quitar turno; noches en fecha de entrada con indicación +1 día.
+- Cadencia inicial de 11 días: D N L L L D N L L L L, día 08–20 y noche 20–08. No se precargan fechas, tampoco el 26/11. Se elige fecha de inicio de ciclo y rango a rellenar, o mes visible/dos meses, con vista previa y confirmación. La fecha de referencia se recuerda al aplicar para mantener la fase el mes siguiente; cálculo por fechas civiles, robusto al cambio de hora.
+- Por defecto la aplicación de cadencias conserva los días existentes, incluidos los editados por reducción; sustituir requiere marcar su opción. Se pueden crear cadencias con pasos y repeticiones, horas propias, cargar una existente y guardar una adaptación. Incluye semana de mañanas L–V y dos libres. Se puede cambiar el nombre de la pareja.
+- JSON incluye familyCalendar con nombre, turnos y cadencias. Las copias antiguas sin ese campo conservan el calendario familiar existente. Sin sincronización entre dispositivos.
+- Comprobado con 42 pruebas, lint/build y prueba visual en Chrome aislado (datos sintéticos): siete accesos, ida/vuelta conservando borrador, calendario propio visible, aplicación del ciclo y edición sin alterar los siguientes días, persistencia tras recargar, sin errores de navegador ni desbordamiento horizontal a 320px. Capturas de inicio y familiar en la carpeta de artefactos de esta conversación. Sigue solo en local, sin commit ni publicación.
+
+## Horas reales — segunda fase del 19/10/2026, pendiente de revisión local
+
+- Almacena un registro por fecha en `tes_nomina_real_time_records`; no modifica los fichajes del cuadrante. El formulario está en Fichar / Diario y el contador guarda también en ese registro. Ambos permiten Sí/No para contar en nómina, con No por defecto si hay trabajo en cuadrante y Sí en día libre. Al editar se mantiene la decisión guardada.
+- Para evitar duplicados, el bloque variable de payrollService usa una vista derivada: si Sí, sustituye solo para el cálculo la entrada del mismo día por las horas reales; si no hay entrada añade una. Si No, o al borrar, sigue contando el cuadrante original. El bloque fijo siempre usa el cuadrante original. Esta sustitución se explica junto a los botones Sí/No; no se suman ambas jornadas del mismo día.
+- Un día libre propone jornada_adicional para pagar completas las horas según el motor existente; con cuadrante propone su tipo. No hay nuevas tarifas ni algoritmo de importes. El tipo y el festivo se pueden corregir. Guardia24 mantiene el cómputo pendiente que ya existía.
+- Entradas/salidas manuales cruzan medianoche con la utilidad existente; guardia24 con horas iguales representa 24h. Pausas descontadas una vez, duración visible y marcas de incluido/informativo. El contador conserva precisión de segundos y sus pausas reales. Guardar otra vez la misma fecha actualiza en vez de duplicar.
+- Los registros se exportan/importan como realTimeRecords; una copia antigua sin ese campo los conserva. Desde el resumen, editar una fila de horas reales abre su formulario específico. Al borrar esa fila se borra el registro real, nunca el cuadrante.
+- Se añadieron pruebas de Sí/No en día libre y con cuadrante, conmutación y borrado, turnos nocturnos, pausas, persistencia, errores de escritura, copias e identidad por día. La comprobación visual interactiva sigue pendiente por no disponer de control de navegador utilizable; Antonio está revisando la página local. No publicar hasta revisar ambas partes.
+
+## Incidencias — 19/10/2026, solo local
+
+- Primera fase autorizada: incidencias con fecha y hora local editable, matrícula, número de coche y motivo multilínea. Guardado en `tes_nomina_incidents` mediante storageService, búsqueda por fecha/matrícula, edición, confirmación de eliminación y vista limpia en diálogo de pantalla completa con copia de texto.
+- Formulario compartido `IncidentForm`: se abre desde Mi turno (Añadir incidencia) y desde el fichaje manual (con la fecha seleccionada), sin terminar ni guardar el fichaje. Mi turno incluye Ver incidencias. La sección Incidencias permite consultar y añadir por su cuenta usando el mismo servicio y almacenamiento.
+- Exportación/importación JSON incluye incidents; las copias antiguas sin ese campo conservan las incidencias existentes. No hay sincronización entre dispositivos. La persistencia depende del almacenamiento local del navegador, como los fichajes.
+- Nómina y cuadrante sin cambios en esta fase. Registro de horas reales con inclusión opcional en nómina pendiente: Antonio quiere revisar Incidencias antes de empezar la segunda fase y publicar al final.
+- Comprobaciones: 23 pruebas, lint y build correctos. La revisión visual automática no se completó: el control del navegador se detuvo por no poder verificar su URL. No confundir la web pública con http://127.0.0.1:5173/, que contiene estos cambios todavía sin publicar.
+
 ## Revisión del 08/10/2026 (prevalece sobre las notas históricas siguientes)
 
 - Aclaración posterior de Antonio: pausa y almuerzo NO pagados; el contador descuenta siempre las pausas y se elimina la elección de pagarlas. Turnos ordinarios: presencial solo por encima de 8 horas netas, incluido turno12 (12h menos 1h de pausa = 3h de exceso). Se conservan las excepciones anteriores de jornada adicional y sábado alterno hasta aclaración expresa.

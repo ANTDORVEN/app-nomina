@@ -21,17 +21,13 @@
     padding: 12px 16px;
   }
 
-  .header-container {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .brand-icon {
@@ -43,6 +39,7 @@
 }
 
 .brand-title {
+  margin: 0;
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-main);
@@ -50,26 +47,30 @@
 }
 
 .brand-subtitle {
+  margin: 4px 0 0;
   font-size: 0.75rem;
   color: var(--text-muted);
 }
 
-/* Pestañas de navegación con scroll horizontal limpio en móvil */
+/* Todas las opciones visibles, sin desplazamiento horizontal. */
 .nav-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
   padding-bottom: 4px;
-  scrollbar-width: none; /* Firefox */
 }
 
-.nav-tabs::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+@media (min-width: 480px) {
+  .nav-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1000px) {
+  .nav-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
 
 .nav-btn {
+  min-width: 0;
+  min-height: 44px;
   background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-muted);
@@ -78,8 +79,8 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
   transition: all 0.2s ease;
 }
 

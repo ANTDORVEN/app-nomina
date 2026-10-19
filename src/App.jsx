@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Header from './components/common/Header.jsx';
+import AppNavigation from './components/navigation/AppNavigation.jsx';
+import FamilyCalendar from './components/family/FamilyCalendar.jsx';
 import FichajeForm from './components/shift/FichajeForm.jsx';
 import LiveShift from './components/shift/LiveShift.jsx';
+import RealTimeRecords from './components/shift/RealTimeRecords.jsx';
 import FichajesList from './components/shift/FichajesList.jsx';
 import ResumenCard from './components/payroll/ResumenCard.jsx';
 import PeriodSelector from './components/payroll/PeriodSelector.jsx';
 import TablaPeriodosATH from './components/payroll/TablaPeriodosATH.jsx';
 import CalendarView from './components/calendar/CalendarView.jsx';
 import ConfigView from './components/config/ConfigView.jsx';
+import IncidenciasView from './components/incidents/IncidenciasView.jsx';
+import IncidentQuickEntry from './components/incidents/IncidentQuickEntry.jsx';
+import { currentIncidentDateTime } from './services/incidentService.js';
 
 import { getPayrollPeriods, getPeriodForDate } from './services/shiftService.js';
 import { calculatePayrollForPeriod } from './services/payrollService.js';
@@ -17,7 +22,13 @@ import './styles/variables.css';
 import './App.css';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('fichaje');
+  return <AppNavigation>{({ screen, navigate, visited }) => <AppScreens activeTab={screen} setActiveTab={navigate} visited={visited} />}</AppNavigation>;
+}
+
+function AppScreens({ activeTab, setActiveTab, visited }) {
+  const [incidentDateTime, setIncidentDateTime] = useState(null);
+  const [realRefresh, setRealRefresh] = useState(0);
+  const [editRealDate, setEditRealDate] = useState(null);
   const [periods, setPeriods] = useState(getPayrollPeriods());
   
   // Buscar periodo activo por defecto según la fecha de hoy
@@ -43,7 +54,9 @@ export default function App() {
 
   const handleLogSaved = () => {
     updateSummary();
+    setRealRefresh(value => value + 1);
   };
+  const editRealRecord = fecha => { setEditRealDate({ fecha }); setActiveTab('fichaje'); };
 
   const handlePeriodsUpdated = (updatedPeriods) => {
     setPeriods(updatedPeriods);
@@ -53,16 +66,16 @@ export default function App() {
   };
 
   return (
-    <div className="app-layout">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="app-layout" hidden={activeTab === 'inicio'}>
 
-      <main className="main-content">
-        {activeTab === 'fichaje' && (
+      <main className="main-content" hidden={activeTab === 'inicio'}>
+        <section hidden={activeTab !== 'fichaje'}>{visited.includes('fichaje') && (
           <div className="view-grid">
             <div>
-              <LiveShift onLogSaved={handleLogSaved} />
+              <LiveShift onLogSaved={handleLogSaved} onAddIncident={() => setIncidentDateTime(currentIncidentDateTime())} onViewIncidents={() => setActiveTab('incidencias')} />
+              <RealTimeRecords onUpdated={handleLogSaved} refreshKey={realRefresh} editDate={editRealDate} />
               <details className="manual-fichaje"><summary>Registrar una jornada manualmente</summary>
-                <FichajeForm onLogSaved={handleLogSaved} />
+                <FichajeForm onLogSaved={handleLogSaved} onAddIncident={date => setIncidentDateTime(`${date}T${currentIncidentDateTime().slice(11)}`)} />
               </details>
             </div>
             <div>
@@ -74,17 +87,18 @@ export default function App() {
               <FichajesList 
                 logs={summary ? summary.logs : []} 
                 onDeleteLog={updateSummary} 
-                onLogUpdated={updateSummary}
+                onLogUpdated={handleLogSaved}
+                onEditRealRecord={editRealRecord}
               />
             </div>
           </div>
-        )}
+        )}</section>
 
-        {activeTab === 'calendario' && (
-          <CalendarView onCalendarUpdated={updateSummary} />
-        )}
+        <section hidden={activeTab !== 'calendario'}>{visited.includes('calendario') && (
+          <CalendarView onCalendarUpdated={handleLogSaved} />
+        )}</section>
 
-        {activeTab === 'resumen' && (
+        <section hidden={activeTab !== 'resumen'}>{visited.includes('resumen') && (
           <div className="resumen-view-container">
             <PeriodSelector 
               periods={periods} 
@@ -95,21 +109,27 @@ export default function App() {
             <FichajesList 
               logs={summary ? summary.logs : []} 
               onDeleteLog={updateSummary} 
-              onLogUpdated={updateSummary}
+              onLogUpdated={handleLogSaved}
+              onEditRealRecord={editRealRecord}
             />
           </div>
-        )}
+        )}</section>
 
-        {activeTab === 'periodos' && (
+        <section hidden={activeTab !== 'periodos'}>{visited.includes('periodos') && (
           <TablaPeriodosATH onPeriodsUpdated={handlePeriodsUpdated} />
-        )}
+        )}</section>
 
-        {activeTab === 'config' && (
+        <section hidden={activeTab !== 'incidencias'}>{visited.includes('incidencias') && <IncidenciasView />}</section>
+        <section hidden={activeTab !== 'familiar'}>{visited.includes('familiar') && <FamilyCalendar active={activeTab === 'familiar'} refreshKey={realRefresh} onOpenCalendar={() => setActiveTab('calendario')} />}</section>
+
+        <section hidden={activeTab !== 'config'}>{visited.includes('config') && (
           <ConfigView onConfigSaved={updateSummary} />
-        )}
+        )}</section>
       </main>
 
-      <footer className="app-footer">
+      {incidentDateTime && <IncidentQuickEntry initialDateTime={incidentDateTime} onClose={() => setIncidentDateTime(null)} onViewIncidents={() => { setIncidentDateTime(null); setActiveTab('incidencias'); }} />}
+
+      <footer className="app-footer" hidden={activeTab === 'inicio'}>
         <p>TES Control & Nómina • Diseñado para Técnicos en Emergencias Sanitarias</p>
       </footer>
     </div>

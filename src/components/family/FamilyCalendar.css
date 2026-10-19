@@ -1,0 +1,67 @@
+.family-view { text-align: left; max-width: 1000px; margin: auto; }
+.family-view h2 { font-size: 1.35rem; letter-spacing: normal; color: var(--text-main); margin: 16px 0; }
+.family-view h3 { font-size: 1.1rem; margin: 0 0 12px; }
+.family-intro, .family-help { color: var(--text-muted); font-size: .9rem; line-height: 1.5; margin: 0 0 16px; }
+.family-view button { min-height: 46px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); padding: 10px 14px; border-radius: 10px; font: inherit; font-size: .9rem; cursor: pointer; }
+.family-view button:focus-visible { outline: 3px solid var(--primary-500); outline-offset: 2px; }
+.family-view button:disabled { opacity: .5; cursor: not-allowed; }
+.family-month-toolbar { display: flex; align-items: end; gap: 12px; }
+.family-month-toolbar label { flex: 1; }
+.family-view label { display: grid; gap: 6px; font-size: .85rem; margin: 14px 0; min-width: 0; }
+.family-view input:not([type=checkbox]), .family-view select, .family-view textarea { width: 100%; min-width: 0; box-sizing: border-box; min-height: 46px; padding: 10px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-main); border-radius: 8px; font: inherit; }
+.family-view textarea { resize: vertical; }
+.family-month-toolbar label { margin: 0; }
+.family-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .85rem; margin-bottom: 14px; }
+.family-own { color: #93c5fd; }
+.family-partner { color: #f9a8d4; }
+.family-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.family-weekday { text-align: center; font-size: .75rem; color: var(--text-muted); padding: 8px 0; }
+.family-view .family-day { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 6px; min-height: 132px; padding: 8px 4px; font-size: .8rem; background: transparent; border-color: #293548; }
+.family-day-number { text-align: left; padding: 0 3px 4px; font-size: 1rem; }
+.family-person { display: block; min-width: 0; border-radius: 6px; padding: 7px 5px; text-align: left; overflow-wrap: anywhere; }
+.family-person-own { color: #dbeafe; background: #203b59; border-left: 3px solid #7ba7d5; }
+.family-person-partner { color: #fce7f3; background: #4c3047; border-left: 3px solid #d6a0bd; }
+.family-person-name { display: block; font-size: .7rem; line-height: 1.3; margin-bottom: 4px; }
+.family-person-shift { display: block; font-size: .8rem; line-height: 1.35; }
+.family-legend .family-person { padding: 8px 14px; }
+.family-view .family-selected { border-color: #c4b5fd; background: #302c53; }
+.family-shared-legend { display: flex; align-items: center; padding: 8px 14px; border: 1px solid #bc9b3d; border-radius: 6px; background: #493d1b; color: #ffedac; }
+.family-view .family-both-free { background: #493d1b; border-color: #d7b249; }
+.family-both-free .family-person { background: transparent; color: #fff0b5; border-color: transparent; }
+.family-both-free .family-day-number { color: #ffe18a; }
+.family-free-star { float: right; font-size: .7rem; margin-left: 2px; }
+.family-view .family-both-free.family-selected { outline: 2px solid #c4b5fd; outline-offset: 1px; }
+.family-panel { margin: 22px 0; border: 1px solid var(--border-color); padding: 18px; border-radius: var(--radius-lg); background: var(--bg-card); overflow-wrap: anywhere; }
+.family-editor { scroll-margin-top: 18px; }
+.family-panel p, .family-panel small { font-size: .85rem; line-height: 1.5; margin-bottom: 12px; display: block; }
+.family-panel summary { cursor: pointer; min-height: 44px; font-weight: 700; }
+.family-time-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.family-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.family-view .family-primary { background: var(--primary-600); border-color: var(--primary-500); }
+.family-view .family-checkbox { display: flex; align-items: center; gap: 10px; min-height: 46px; }
+.family-checkbox input { width: 22px; height: 22px; flex-shrink: 0; }
+.family-sequence { color: #e9d5ff; overflow-wrap: anywhere; }
+.family-preview { margin-top: 18px; padding: 14px; background: var(--bg-app); border-radius: 10px; }
+.family-preview ul { padding-left: 20px; font-size: .85rem; margin: 12px 0; }
+.cadence-builder h3 { margin: 26px 0 12px; }
+.cadence-templates { display: grid; gap: 10px; }
+.cadence-templates button { text-align: left; padding: 14px; min-height: 70px; }
+.cadence-templates small { display: block; color: var(--text-muted); margin: 5px 0 0; }
+.cadence-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 8px; margin: 16px 0; }
+.family-view .cadence-day { min-height: 100px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px; background: var(--bg-app); }
+.cadence-day small { font-size: .68rem; margin: 0; line-height: 1.3; }
+.cadence-day strong { font-size: .95rem; }
+.family-view .cadence-dia { border-color: #94752a; }
+.family-view .cadence-noche { border-color: #7163a8; }
+.family-view .cadence-libre { border-color: #327558; }
+.family-view .cadence-day[aria-pressed=true], .family-view .cadence-types button[aria-pressed=true] { outline: 2px solid #c4b5fd; background: #302c53; }
+.cadence-add, .cadence-types { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.cadence-add button, .cadence-types button { flex: 1 0 85px; }
+.cadence-edit { background: var(--bg-app); padding: 14px; border: 1px solid var(--primary-500); border-radius: 12px; margin: 18px 0; }
+.cadence-edit h4 { margin: 0 0 12px; }
+.cadence-empty { color: var(--text-muted); padding: 18px 0; }
+@media (min-width: 680px) { .cadence-templates { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.family-error, .family-success { padding: 14px; border-radius: 10px; }
+.family-error { background: #49232b; color: #fecaca; }
+.family-success { background: #153c32; color: #a7f3d0; }
+@media (max-width: 500px) { .family-grid { gap: 3px; } .family-view .family-day { min-height: 108px; padding: 6px 0; gap: 5px; } .family-day .family-person { padding: 6px 1px; border-left: 0; font-family: system-ui, sans-serif; letter-spacing: 0; } .family-person-name { font-size: .62rem; } .family-person-shift { font-size: .65rem; font-weight: 600; } .family-day-number { font-size: .9rem; } .family-panel { padding: 14px; } }

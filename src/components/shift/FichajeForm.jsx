@@ -6,7 +6,7 @@ import './FichajeForm.css';
 /**
  * FichajeForm.jsx - Formulario de fichaje con notificación visual tipo Toast '✅ Fichaje guardado'.
  */
-export default function FichajeForm({ onLogSaved }) {
+export default function FichajeForm({ onLogSaved, onAddIncident }) {
   const shiftTypes = getShiftTypes();
   
   const [fecha, setFecha] = useState(formatDateToISO(new Date()));
@@ -185,6 +185,7 @@ export default function FichajeForm({ onLogSaved }) {
           💾 Guardar Fichaje
         </button>
       </form>
+      <div className="turno-incidents"><button type="button" onClick={() => onAddIncident?.(fecha)}>📝 Añadir incidencia de esta jornada</button></div>
     </div>
   );
 }
