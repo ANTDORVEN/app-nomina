@@ -87,7 +87,7 @@ export default function ResumenCard({ summary }) {
           <span className="metric-icon">⏱️</span>
           <div>
             <span className="metric-value">{formatHoursToHHMM(totalHorasTrabajadas)}</span>
-            <span className="metric-label">Horas Liquidadas</span>
+            <span className="metric-label">Horas registradas</span>
           </div>
         </div>
 
@@ -95,7 +95,7 @@ export default function ResumenCard({ summary }) {
           <span className="metric-icon">➕</span>
           <div>
             <span className="metric-value">{formatHoursToHHMM(totalHorasJComplement)}</span>
-            <span className="metric-label">J.Complement</span>
+            <span className="metric-label">Complementarias</span>
           </div>
         </div>
 
@@ -109,11 +109,11 @@ export default function ResumenCard({ summary }) {
       </div>
 
       {/* Desglose Económico de Doble Bloque */}
-      <div className="desglose-section">
-        {/* BLOQUE 1: CONCEPTOS FIJOS DEL MES NATURAL */}
-        <h3 className="desglose-title">
-          🏛️ 1. Conceptos Fijos ({mesNatural.nombreMes}: {formatDateSpanish(mesNatural.fechaInicio)} - {formatDateSpanish(mesNatural.fechaFin)})
-        </h3>
+      <div className="payroll-breakdown">
+        <details className="disclosure-panel fixed-breakdown">
+          <summary><span>Conceptos fijos<small>Salario, convenio, pagas y antigüedad</small></span><span className="disclosure-value">{formatAmount(desgloseImportes.subtotalFijoMesNatural)} €</span></summary>
+          <div className="disclosure-body">
+          <p className="breakdown-range">{formatDateSpanish(mesNatural.fechaInicio)} – {formatDateSpanish(mesNatural.fechaFin)}</p>
         <div className="desglose-list">
           <div className="desglose-row">
             <span>Salario base<small>{formatAmount(precioBaseDia * 30)} € × {diasMesNatural}/30 días</small></span>
@@ -137,10 +137,12 @@ export default function ResumenCard({ summary }) {
           </div>
         </div>
 
-        {/* BLOQUE 2: CONCEPTOS VARIABLES DE LA TABLA ATH */}
-        <h3 className="desglose-title" style={{ marginTop: '20px' }}>
-          💰 2. Conceptos Variables (Rango Tabla ATH: {formatDateSpanish(periodoATH.fechaInicio)} - {formatDateSpanish(periodoATH.fechaFin)})
-        </h3>
+          </div>
+        </details>
+        <details className="disclosure-panel variable-breakdown">
+          <summary><span>Conceptos variables<small>Complementarias, festivos y nocturnidad</small></span><span className="disclosure-value">{formatAmount(desgloseImportes.subtotalVariableATH)} €</span></summary>
+          <div className="disclosure-body">
+          <p className="breakdown-range">Tabla ATH: {formatDateSpanish(periodoATH.fechaInicio)} – {formatDateSpanish(periodoATH.fechaFin)}</p>
         <div className="desglose-list">
           <div className="desglose-row">
             <span>Jornada complementaria<small>{formatHoursToHHMM(totalHorasJComplement)} × {formatAmount(precioJComplement)} €/h</small></span>
@@ -173,6 +175,8 @@ export default function ResumenCard({ summary }) {
             <strong className="concept-amount highlight">+{formatAmount(desgloseImportes.subtotalVariableATH)} €</strong>
           </div>
         </div>
+          </div>
+        </details>
       </div>
     </div>
   );

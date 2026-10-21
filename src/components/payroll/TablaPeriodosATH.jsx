@@ -61,6 +61,7 @@ export default function TablaPeriodosATH({ onPeriodsUpdated }) {
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
       {/* Formulario para añadir nuevo periodo */}
+      <details className="disclosure-panel"><summary><span>Añadir un periodo<small>Nombre y fechas de cobro</small></span></summary><div className="disclosure-body">
       <form onSubmit={handleAddPeriod} className="periodo-form">
         <div className="form-group">
           <label>Nombre del mes de nómina:</label>
@@ -99,6 +100,7 @@ export default function TablaPeriodosATH({ onPeriodsUpdated }) {
           ➕ Añadir Periodo a la Tabla
         </button>
       </form>
+      </div></details>
 
       {/* Listado de Periodos Configurados */}
       <div className="table-wrapper">

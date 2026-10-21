@@ -16,4 +16,8 @@
 .real-time-search { margin-top: 26px; }
 .real-time-entry { padding: 18px 0; border-bottom: 1px solid var(--border-color); font-size: .85rem; }
 .real-time-entry h3 { margin: 0 0 6px; font-size: 1rem; }
-.real-time-paid { color: #a7f3d0; }
+.real-time-paid { color: var(--success-text); }
+
+.payroll-choice button[aria-pressed=true] { color:#fff; border-color:var(--primary-600); }
+
+.real-time-card .real-time-history .real-time-search { margin-top:0; }

@@ -20,6 +20,7 @@ export default function RealTimeRecords({ onUpdated, refreshKey, editDate }) {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const ref = useRef(null);
+  const formPanel = useRef(null);
   const types = getShiftTypes().filter(type => !type.esAusencia && type.id !== 'libre');
   useEffect(() => {
     setRecords(getRealTimeRecords());
@@ -27,7 +28,7 @@ export default function RealTimeRecords({ onUpdated, refreshKey, editDate }) {
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
   }, [refreshKey]);
-  useEffect(() => { if (editDate) { setForm(formForDate(editDate.fecha)); ref.current.scrollIntoView({ block: 'start' }); } }, [editDate]);
+  useEffect(() => { if (editDate) { formPanel.current.open = true; setForm(formForDate(editDate.fecha)); ref.current.scrollIntoView({ block: 'start' }); } }, [editDate]);
   const scheduled = scheduledWorkForDate(form.fecha);
   const duration = form.tipoTurnoId === 'guardia24' && form.horaEntradaReal === form.horaSalidaReal ? 24 : calculateWorkedHours(form.horaEntradaReal, form.horaSalidaReal);
   const change = event => {
@@ -55,6 +56,9 @@ export default function RealTimeRecords({ onUpdated, refreshKey, editDate }) {
   return <section className="real-time-card" ref={ref} aria-labelledby="real-time-title">
     <h2 id="real-time-title">Horas reales de entrada y salida</h2>
     <p>Un registro por día. El cuadrante se conserva y puedes decidir si estas horas cuentan en nómina.</p>
+    <details className="disclosure-panel real-time-editor" ref={formPanel}>
+      <summary><span>Anotar o corregir horas<small>Entrada, salida y decisión de nómina</small></span></summary>
+      <div className="disclosure-body">
     <form onSubmit={save} className="real-time-form">
       <label>Fecha<input name="fecha" type="date" required value={form.fecha} onChange={change} /></label>
       <div className="real-time-hours"><label>Entrada real<input name="horaEntradaReal" type="time" required value={form.horaEntradaReal} onChange={change} /></label><label>Salida real<input name="horaSalidaReal" type="time" required value={form.horaSalidaReal} onChange={change} /></label></div>
@@ -66,12 +70,19 @@ export default function RealTimeRecords({ onUpdated, refreshKey, editDate }) {
       <button className="submit-btn" type="submit">Guardar horas reales</button>
       {error && <p role="alert" className="live-error">{error}</p>}{message && <p role="status" className="log-save-message">{message}</p>}
     </form>
+      </div>
+    </details>
+    <details className="disclosure-panel real-time-history">
+      <summary><span>Consultar horas reales<small>Registros informativos y añadidos a nómina</small></span><span className="disclosure-value">{records.length}</span></summary>
+      <div className="disclosure-body">
     <label className="real-time-search">Consultar por fecha<input type="search" placeholder="2026-10-19 o 19/10/2026" value={query} onChange={e => setQuery(e.target.value)} /></label>
     {!records.length && <p>Todavía no hay horas reales registradas.</p>}
     {records.filter(record => record.fecha.includes(query.trim()) || record.fecha.split('-').reverse().join('/').includes(query.trim())).map(record => <article className="real-time-entry" key={record.fecha}>
       <h3>{formatDateSpanish(record.fecha)}</h3><p>{record.horaEntradaReal} – {record.horaSalidaReal}{record.horaSalidaReal < record.horaEntradaReal && ' (+1 día)'} · {formatHoursToHHMM(record.horasTrabajadas)}</p>
       <p className={record.contarEnNomina ? 'real-time-paid' : ''}>{record.contarEnNomina ? '💶 En nómina · añadido manualmente' : 'ⓘ Solo informativo'}</p>
-      <div className="log-actions"><button type="button" onClick={() => { setForm(formForDate(record.fecha)); setMessage(''); setError(''); ref.current.scrollIntoView({ block: 'start' }); }}>Editar</button><button type="button" onClick={() => remove(record.fecha)}>Borrar</button></div>
+      <div className="log-actions"><button type="button" onClick={() => { formPanel.current.open = true; setForm(formForDate(record.fecha)); setMessage(''); setError(''); ref.current.scrollIntoView({ block: 'start' }); }}>Editar</button><button type="button" onClick={() => remove(record.fecha)}>Borrar</button></div>
     </article>)}
+      </div>
+    </details>
   </section>;
 }

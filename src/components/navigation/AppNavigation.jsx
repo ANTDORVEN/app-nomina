@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import HomeView from './HomeView.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 import { APP_SCREENS } from '../../models/navigationScreens.js';
 import './AppNavigation.css';
 
@@ -20,6 +21,7 @@ export default function AppNavigation({ children }) {
   }, [screen]);
   const current = APP_SCREENS.find(item => item.id === screen);
   return <div className="app-navigation">
+    <div className="appearance-bar"><span>TES Control & Nómina</span><ThemeToggle /></div>
     {screen !== 'inicio' && <header className="screen-header"><button type="button" onClick={() => navigate('inicio')}>← Volver al inicio</button><h1 ref={heading} tabIndex={-1}>{current?.title}</h1></header>}
     {screen === 'inicio' && <HomeView onNavigate={navigate} screens={APP_SCREENS} />}
     {children({ screen, navigate, visited })}

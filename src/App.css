@@ -53,3 +53,43 @@
   color: var(--text-muted);
   margin-top: 40px;
 }
+
+/* Filas desplegables: resumen visible, herramientas bajo demanda. */
+.disclosure-panel { min-width:0; margin:12px 0; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); text-align:left; }
+.disclosure-panel > summary { list-style:none; display:flex; align-items:center; gap:12px; min-height:68px; padding:16px; color:var(--text-main); font-size:.95rem; font-weight:650; cursor:pointer; }
+.disclosure-panel > summary::-webkit-details-marker { display:none; }
+.disclosure-panel > summary::marker { content:''; }
+.disclosure-panel > summary > span:first-child { flex:1; min-width:0; overflow-wrap:anywhere; }
+.disclosure-panel > summary small { display:block; font-size:.78rem; color:var(--text-muted); font-weight:400; line-height:1.4; margin-top:4px; }
+.disclosure-panel > summary::after { content:''; width:7px; height:7px; flex-shrink:0; border-right:2px solid var(--text-muted); border-bottom:2px solid var(--text-muted); transform:rotate(-45deg); margin-left:3px; }
+.disclosure-panel[open] > summary::after { transform:rotate(45deg); }
+.disclosure-panel[open] > summary { border-bottom:1px solid var(--border-color); }
+.disclosure-value { color:var(--text-muted); font-size:.85rem; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.disclosure-body { padding:16px; min-width:0; }
+.disclosure-body > :last-child { margin-bottom:0; }
+.payroll-breakdown { display:grid; gap:10px; }
+.payroll-breakdown .disclosure-panel { margin:0; background:var(--bg-app); }
+.breakdown-range { color:var(--text-muted); font-size:.8rem; margin-bottom:10px; }
+.resumen-view-container { gap:14px; }
+.resumen-view-container .payroll-days { margin-top:0; }
+.payroll-days .list-title { display:none; }
+.settings-fields { display:flex; flex-direction:column; gap:16px; }
+.config-form { gap:10px; }
+.config-form > .disclosure-panel { margin:0; }
+.real-time-card > .disclosure-panel { margin:12px 0 0; }
+.real-time-history .real-time-search { margin-top:0; }
+.manual-fichaje.disclosure-panel > summary { padding:16px; color:var(--text-main); }
+.manual-fichaje.disclosure-panel[open] > summary { margin-bottom:0; }
+.manual-fichaje .fichaje-card { border:0; box-shadow:none; }
+.incidents-layout { grid-template-columns:minmax(0,1fr); gap:16px; }
+.incident-form-panel { margin:0; }
+.incident-form-panel .incident-panel { padding:0; border:0; }
+.incident-form-panel h3 { display:none; }
+.periodos-container { text-align:left; }
+.periodo-form { border:0; padding:0; margin:0; background:transparent; }
+.family-names-form { margin:0; }
+.family-panel:has(> summary) { padding:0; border-radius:var(--radius-md); }
+.family-panel > summary { padding:16px; margin:0; min-height:60px; }
+.family-panel[open]:has(> summary) { padding:0 16px 16px; }
+.family-panel[open] > summary { padding-left:0; padding-right:0; }
+@media (max-width:380px) { .disclosure-panel > summary { padding:14px 12px; gap:8px; font-size:.9rem; } .disclosure-body { padding:14px 12px; } .disclosure-value { font-size:.8rem; } }

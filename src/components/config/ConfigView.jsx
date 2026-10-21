@@ -225,9 +225,12 @@ export default function ConfigView({ onConfigSaved }) {
 
       {mensaje && <div className="alert-success">{mensaje}</div>}
 
-      <form onSubmit={handleSubmit} className="config-form">
+      <form onSubmit={handleSubmit} className="config-form" onInvalidCapture={event => {
+        let panel = event.target.closest('details');
+        while (panel) { panel.open = true; panel = panel.parentElement?.closest('details'); }
+      }}>
         {/* Conceptos Calculados por Día Trabajado */}
-        <h3 className="section-subtitle">📅 Conceptos fijos: importes de referencia para 30 días</h3>
+        <details className="disclosure-panel"><summary><span>Salario y antigüedad<small>Importes fijos de referencia para 30 días</small></span></summary><div className="disclosure-body settings-fields">
         <p className="section-desc">El cálculo conserva los decimales al dividir entre 30. Las vacaciones mantienen el salario fijo.</p>
         
         <div className="form-row">
@@ -292,7 +295,8 @@ export default function ConfigView({ onConfigSaved }) {
         </div>
 
         {/* Tarifas Variables de Hora */}
-        <h3 className="section-subtitle">💶 Tarifas Variables por Hora (Tabla ATH)</h3>
+        </div></details>
+        <details className="disclosure-panel"><summary><span>Tarifas por hora<small>Complementarias, extras y nocturnidad</small></span></summary><div className="disclosure-body settings-fields">
         
         <div className="form-row">
           <div className="form-group">
@@ -332,7 +336,8 @@ export default function ConfigView({ onConfigSaved }) {
         </div>
 
         {/* Horarios por defecto de los turnos */}
-        <h3 className="section-subtitle">⏱️ Horarios por Defecto de los Tipos de Turno</h3>
+        </div></details>
+        <details className="disclosure-panel"><summary><span>Horarios de los turnos<small>Entrada, salida y pausas por defecto</small></span></summary><div className="disclosure-body settings-fields">
         <p className="section-desc">Ajusta la hora de inicio y fin de cada turno para adaptarlo a tus horarios reales de servicio.</p>
 
         <div className="shift-types-editor">
@@ -378,6 +383,7 @@ export default function ConfigView({ onConfigSaved }) {
           ))}
         </div>
 
+        </div></details>
         <button type="submit" className="save-config-btn">
           💾 Guardar Tarifas y Desglose ATH
         </button>
@@ -395,6 +401,8 @@ export default function ConfigView({ onConfigSaved }) {
             ⬇️ Exportar Copia (Descarga / Compartir)
           </button>
 
+        </div>
+        <details className="disclosure-panel"><summary><span>Importar o copiar datos<small>Restaurar un archivo o usar una copia en texto</small></span></summary><div className="disclosure-body backup-buttons">
           <button type="button" className="btn-backup-copy" onClick={handleOpenJsonModal}>
             📋 Ver / Copiar JSON Manualmente
           </button>
@@ -407,7 +415,7 @@ export default function ConfigView({ onConfigSaved }) {
           <button type="button" className="btn-backup-import-text" onClick={handleImportJsonFromText}>
             📝 Pegar JSON Manualmente
           </button>
-        </div>
+        </div></details>
       </div>
 
       {/* MODAL RESPALDO: Visor / Copiador Manual de JSON */}

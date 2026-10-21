@@ -227,41 +227,25 @@ export default function CalendarView({ onCalendarUpdated }) {
     }
   };
 
-  const daysGrid = getMonthDaysGrid(currentYear, currentMonth);
+  const monthGrid = getMonthDaysGrid(currentYear, currentMonth);
+  const daysGrid = monthGrid.slice(0, Math.ceil((monthGrid.findLastIndex(day => day.isCurrentMonth) + 1) / 7) * 7);
 
   return (
     <div className="calendar-container">
       <div className="calendar-header">
         <div className="calendar-title-box">
           <h2 className="calendar-month-title">
-            🗓️ {MONTH_NAMES[currentMonth]} {currentYear}
+            {MONTH_NAMES[currentMonth]} {currentYear}
           </h2>
           <button className="today-btn" onClick={handleToday}>Hoy</button>
         </div>
 
         <div className="calendar-actions">
-          <button className="pattern-btn" onClick={() => setShowPatternModal(true)}>
-            ⚡ Generar Patrón / Ausencia
-          </button>
-          <button className="pattern-btn delete-cadence-btn" onClick={() => setShowDeleteModal(true)}>
-            🗑️ Borrar Cadencia
-          </button>
           <div className="nav-buttons-group">
-            <button className="nav-arrow" onClick={handlePrevMonth}>◀</button>
-            <button className="nav-arrow" onClick={handleNextMonth}>▶</button>
+            <button className="nav-arrow" aria-label="Mes anterior" onClick={handlePrevMonth}>‹</button>
+            <button className="nav-arrow" aria-label="Mes siguiente" onClick={handleNextMonth}>›</button>
           </div>
         </div>
-      </div>
-
-      {/* Leyenda con abreviaturas y nombres completos */}
-      <div className="calendar-legend">
-        {shiftTypes.map(st => (
-          <span key={st.id} className="legend-item" title={st.nombre}>
-            <span className="legend-color" style={{ backgroundColor: st.color }}></span>
-            <strong>{st.nombreCorto || st.nombre}</strong>
-            <span className="legend-full-name">({st.nombre})</span>
-          </span>
-        ))}
       </div>
 
       <div className="calendar-grid">
@@ -276,26 +260,23 @@ export default function CalendarView({ onCalendarUpdated }) {
             : null;
           const isToday = dayItem.dateIso === new Date().toISOString().split('T')[0];
 
-          const tooltipText = logForDay && shiftObj 
-            ? `${shiftObj.nombre}${logForDay.notas ? ` • ${logForDay.notas}` : ''}`
-            : (shiftObj ? shiftObj.nombre : '');
-
           return (
-            <div 
+            <button type="button"
               key={index} 
-              className={`calendar-day-cell ${!dayItem.isCurrentMonth ? 'outside-month' : ''} ${isToday ? 'is-today' : ''}`}
+              className={`calendar-day-cell ${!dayItem.isCurrentMonth ? 'outside-month' : ''} ${isToday ? 'is-today' : ''} ${shiftObj ? (logForDay.tipoTurnoId === 'libre' ? 'rest-day' : 'scheduled-day') : ''}`}
+              style={{ '--shift-color': shiftObj?.color }}
+              aria-label={`${formatDateSpanish(dayItem.dateIso)}: ${shiftObj?.nombre ?? 'sin turno registrado'}`}
               onClick={() => handleDayClick(dayItem)}
-              title={tooltipText}
             >
               <span className="day-number">{dayItem.dayNumber}</span>
               
-              {shiftObj && (
+              {shiftObj && dayItem.isCurrentMonth && (
                 <div 
                   className="day-shift-badge" 
-                  style={{ backgroundColor: shiftObj.color }}
+
                 >
-                  <span className="shift-name-short">{shiftObj.nombreCorto || shiftObj.nombre}</span>
-                  {logForDay.horasTrabajadas > 0 && (
+                  <span className="shift-name-short">{logForDay.tipoTurnoId === 'guardia24' ? '24 h' : shiftObj.nombreCorto || shiftObj.nombre}</span>
+                  {logForDay.horasTrabajadas > 0 && logForDay.tipoTurnoId !== 'guardia24' && (
                     <span className="shift-hours">{formatHoursToHHMM(logForDay.horasTrabajadas)}</span>
                   )}
                 </div>
@@ -306,10 +287,32 @@ export default function CalendarView({ onCalendarUpdated }) {
                   🤝 {logForDay.companeroIntercambio}
                 </span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
+
+      <details className="disclosure-panel calendar-tools"><summary><span>Organizar turnos<small>Aplicar cadencias, ausencias o borrar un patrón</small></span></summary><div className="disclosure-body calendar-actions">
+          <button className="pattern-btn" onClick={() => setShowPatternModal(true)}>
+            ⚡ Generar Patrón / Ausencia
+          </button>
+          <button className="pattern-btn delete-cadence-btn" onClick={() => setShowDeleteModal(true)}>
+            🗑️ Borrar Cadencia
+          </button>
+      </div></details>
+      {/* Leyenda con abreviaturas y nombres completos */}
+      <details className="calendar-legend-panel">
+        <summary>Colores y tipos de turno</summary>
+        <div className="calendar-legend">
+        {shiftTypes.map(st => (
+          <span key={st.id} className="legend-item" title={st.nombre}>
+            <span className="legend-color" style={{ backgroundColor: st.color }}></span>
+            <strong>{st.nombreCorto || st.nombre}</strong>
+            <span className="legend-full-name">({st.nombre})</span>
+          </span>
+        ))}
+        </div>
+      </details>
 
       {/* MODAL 1: Editar Día Individual */}
       {selectedDay && (

@@ -74,7 +74,7 @@ function AppScreens({ activeTab, setActiveTab, visited }) {
             <div>
               <LiveShift onLogSaved={handleLogSaved} onAddIncident={() => setIncidentDateTime(currentIncidentDateTime())} onViewIncidents={() => setActiveTab('incidencias')} />
               <RealTimeRecords onUpdated={handleLogSaved} refreshKey={realRefresh} editDate={editRealDate} />
-              <details className="manual-fichaje"><summary>Registrar una jornada manualmente</summary>
+              <details className="manual-fichaje disclosure-panel"><summary>Registrar una jornada manualmente</summary>
                 <FichajeForm onLogSaved={handleLogSaved} onAddIncident={date => setIncidentDateTime(`${date}T${currentIncidentDateTime().slice(11)}`)} />
               </details>
             </div>
@@ -84,12 +84,14 @@ function AppScreens({ activeTab, setActiveTab, visited }) {
                 selectedPeriodId={selectedPeriodId} 
                 onSelectPeriod={setSelectedPeriodId} 
               />
-              <FichajesList 
+              <details className="disclosure-panel payroll-days"><summary><span>Días del periodo<small>Consultar, editar o borrar registros</small></span><span className="disclosure-value">{summary?.logs?.length ?? 0} días</span></summary><div className="disclosure-body">
+              <FichajesList
                 logs={summary ? summary.logs : []} 
                 onDeleteLog={updateSummary} 
                 onLogUpdated={handleLogSaved}
                 onEditRealRecord={editRealRecord}
               />
+              </div></details>
             </div>
           </div>
         )}</section>
@@ -106,12 +108,14 @@ function AppScreens({ activeTab, setActiveTab, visited }) {
               onSelectPeriod={setSelectedPeriodId} 
             />
             <ResumenCard summary={summary} />
-            <FichajesList 
+            <details className="disclosure-panel payroll-days"><summary><span>Días del periodo<small>Consultar, editar o borrar registros</small></span><span className="disclosure-value">{summary?.logs?.length ?? 0} días</span></summary><div className="disclosure-body">
+              <FichajesList
               logs={summary ? summary.logs : []} 
               onDeleteLog={updateSummary} 
               onLogUpdated={handleLogSaved}
               onEditRealRecord={editRealRecord}
             />
+            </div></details>
           </div>
         )}</section>
 

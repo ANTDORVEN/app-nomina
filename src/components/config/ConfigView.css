@@ -148,9 +148,9 @@
 }
 
 .btn-backup-export {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--success-bg);
   border: 1px solid var(--success-500);
-  color: #a7f3d0;
+  color: var(--success-text);
   padding: 9px 14px;
   border-radius: var(--radius-sm);
   font-weight: 700;
@@ -159,9 +159,9 @@
 }
 
 .btn-backup-copy {
-  background: rgba(245, 158, 11, 0.15);
+  background: var(--warning-bg);
   border: 1px solid #f59e0b;
-  color: #fef08a;
+  color: var(--warning-text);
   padding: 9px 14px;
   border-radius: var(--radius-sm);
   font-weight: 700;
@@ -184,7 +184,7 @@
 .btn-backup-import-text {
   background: rgba(14, 165, 233, 0.15);
   border: 1px solid #0ea5e9;
-  color: #bae6fd;
+  color: var(--info-text);
   padding: 9px 14px;
   border-radius: var(--radius-sm);
   font-weight: 700;
@@ -202,7 +202,7 @@
   background: var(--bg-app);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  color: #818cf8;
+  color: var(--accent-text);
   font-family: monospace;
   font-size: 0.75rem;
   padding: 10px;
@@ -226,3 +226,7 @@
   font-size: 0.82rem;
   padding: 8px 12px;
 }
+
+.backup-buttons > :is(button,label) { background:var(--bg-app); color:var(--text-main); border-color:var(--border-color); min-height:44px; display:inline-flex; align-items:center; }
+.shift-type-inputs input { min-height:44px; }
+.config-container { text-align:left; }

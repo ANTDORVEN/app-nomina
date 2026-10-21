@@ -21,13 +21,13 @@
   top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: #10b981;
-  color: #ffffff;
+  background: var(--success-bg);
+  color: var(--success-text);
   padding: 12px 22px;
   border-radius: var(--radius-md);
   font-weight: 700;
   font-size: 0.95rem;
-  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -55,7 +55,7 @@
 }
 
 .periodo-badge {
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--accent-bg);
   border: 1px solid rgba(99, 102, 241, 0.3);
   color: var(--primary-100);
   padding: 8px 12px;
@@ -67,15 +67,15 @@
 }
 
 .periodo-badge.warning {
-  background: rgba(245, 158, 11, 0.1);
+  background: var(--warning-bg);
   border-color: rgba(245, 158, 11, 0.3);
-  color: #fef08a;
+  color: var(--warning-text);
 }
 
 .alert-success {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--success-bg);
   border: 1px solid var(--success-500);
-  color: #a7f3d0;
+  color: var(--success-text);
   padding: 10px 14px;
   border-radius: var(--radius-sm);
   margin-bottom: 16px;
@@ -205,7 +205,7 @@
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  background: var(--primary-600);
   color: #fff;
   border: none;
   padding: 14px;

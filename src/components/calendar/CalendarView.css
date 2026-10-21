@@ -40,7 +40,7 @@
 }
 
 .today-btn {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-hover);
   border: 1px solid var(--border-color);
   color: var(--text-main);
   padding: 4px 8px;
@@ -57,7 +57,7 @@
 }
 
 .pattern-btn {
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  background: var(--primary-600);
   color: #fff;
   border: none;
   padding: 7px 10px;
@@ -72,14 +72,14 @@
 }
 
 .delete-cadence-btn {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--danger-bg);
   border: 1px solid var(--danger-500);
-  color: #fca5a5;
+  color: var(--danger-text);
   box-shadow: none;
 }
 
 .delete-cadence-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: var(--danger-bg);
 }
 
 .nav-buttons-group {
@@ -127,7 +127,7 @@
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 3px;
 }
 
@@ -213,8 +213,8 @@
 
 .exchange-tag {
   font-size: 0.58rem;
-  color: #fef08a;
-  background: rgba(245, 158, 11, 0.25);
+  color: var(--warning-text);
+  background: var(--warning-bg);
   padding: 1px 3px;
   border-radius: 3px;
   white-space: nowrap;
@@ -413,3 +413,44 @@
     width: auto;
   }
 }
+
+.calendar-grid { grid-template-columns:repeat(7,minmax(0,1fr)); }
+.danger-btn { background:var(--danger-bg) !important; color:var(--danger-text) !important; }
+
+.calendar-legend-panel { margin:0 0 16px; border-bottom:1px solid var(--border-color); }
+.calendar-legend-panel summary { min-height:44px; padding:10px 0; color:var(--text-muted); font-size:.85rem; }
+.calendar-legend-panel .calendar-legend { border:0; padding:10px 0; font-size:.8rem; }
+.legend-full-name { font-size:.78rem; opacity:1; }
+.calendar-actions button, .today-btn { min-height:44px; }
+.calendar-day-cell { min-height:80px; }
+.calendar-day-cell.is-today { box-shadow:none; }
+.day-number { font-size:.85rem; }
+.day-shift-badge { background:var(--bg-card); color:var(--text-main); border-top:4px solid var(--shift-color); padding:4px 1px; box-shadow:none; gap:3px; }
+.shift-name-short { font-size:.95rem; font-weight:750; }
+.shift-hours { font-size:.7rem; opacity:1; color:var(--text-muted); }
+
+/* Vista de mes: descansos discretos y turnos como foco visual. */
+.calendar-header { flex-direction:row; align-items:center; justify-content:space-between; gap:8px; margin-bottom:20px; }
+.calendar-title-box { min-width:0; gap:8px; }
+.calendar-month-title { font-size:clamp(1rem,3vw,1.3rem); font-weight:650; }
+.calendar-actions { flex-shrink:0; }
+.calendar-header .nav-arrow { font-size:1.7rem; line-height:1; min-width:40px; padding:4px 10px; background:transparent; border:0; }
+.calendar-grid { gap:1px; background:var(--border-color); border:1px solid var(--border-color); border-radius:12px; overflow:hidden; }
+.weekday-header { background:var(--bg-card); padding:12px 0; font-size:.72rem; font-weight:600; }
+.calendar-grid .calendar-day-cell { appearance:none; font:inherit; text-align:left; border:0; border-radius:0; padding:8px; min-height:108px; background:var(--bg-card); gap:5px; transition:none; }
+.calendar-grid .calendar-day-cell.scheduled-day { background:color-mix(in srgb,var(--shift-color) 16%,var(--bg-card)); }
+.calendar-grid .calendar-day-cell.rest-day { background:var(--rest-day-bg); }
+.calendar-grid .calendar-day-cell.outside-month { opacity:1; background:var(--bg-app); }
+.calendar-grid .outside-month .day-number { color:var(--text-muted); opacity:.6; }
+.calendar-grid .calendar-day-cell.is-today { outline:2px solid var(--primary-500); outline-offset:-2px; box-shadow:none; }
+.calendar-grid .calendar-day-cell:hover { box-shadow:inset 0 0 0 2px var(--primary-500); }
+.calendar-grid .day-number { font-size:.82rem; font-weight:500; }
+.calendar-grid .day-shift-badge { border:0; background:transparent; flex:1; padding:0; box-shadow:none; }
+.calendar-grid .shift-name-short { font-size:clamp(1.05rem,3.8vw,1.65rem); font-weight:650; }
+.calendar-grid .rest-day .shift-name-short { font-size:.7rem; color:var(--text-muted); font-weight:400; }
+.calendar-grid .rest-day .day-shift-badge { align-items:flex-start; justify-content:flex-end; }
+.calendar-tools { margin-top:20px; }
+.calendar-tools .calendar-actions { display:flex; flex-wrap:wrap; gap:12px; }
+.calendar-tools .pattern-btn { flex:1 1 180px; white-space:normal; }
+.calendar-legend-panel { border:0; margin-bottom:0; }
+@media(max-width:480px) { .calendar-grid .calendar-day-cell { min-height:86px; padding:6px 3px; } .calendar-header { gap:4px; } .calendar-header .today-btn { padding:4px 7px; } .calendar-header .nav-arrow { min-width:32px; padding:4px 7px; } }

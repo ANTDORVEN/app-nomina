@@ -87,7 +87,7 @@
 }
 
 .extra-tag {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--danger-bg);
   color: var(--danger-500);
 }
 
@@ -128,12 +128,12 @@
 }
 
 .log-actions .log-delete-btn {
-  color: #fca5a5;
+  color: var(--danger-text);
   margin-left: auto;
 }
 
 .log-actions .log-save-btn {
-  background: var(--primary-500);
+  background: var(--primary-600);
   border-color: var(--primary-500);
   color: #fff;
 }
@@ -207,7 +207,7 @@
 }
 
 .log-editor-error {
-  color: #fca5a5;
+  color: var(--danger-text);
 }
 
 .log-save-message {
@@ -216,6 +216,6 @@
   margin-bottom: 12px;
   border: 1px solid var(--success-500);
   border-radius: var(--radius-sm);
-  color: #a7f3d0;
+  color: var(--success-text);
   font-size: 0.85rem;
 }

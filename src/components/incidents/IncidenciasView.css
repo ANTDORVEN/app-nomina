@@ -13,7 +13,7 @@
 .incidents-view button, .incident-dialog button { min-height: 44px; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); color: var(--text-main); background: var(--bg-card-hover); font: inherit; font-size: .85rem; cursor: pointer; }
 .incidents-view button:focus-visible, .incident-dialog button:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 3px; }
 .incidents-view .incident-primary { background: var(--primary-600); border-color: var(--primary-500); }
-.incidents-view .incident-danger, .incident-dialog .incident-danger { color: #fecaca; border-color: #9f3434; background: #49232b; }
+.incidents-view .incident-danger, .incident-dialog .incident-danger { color: var(--danger-text); border-color: var(--danger-500); background: var(--danger-bg); }
 .incident-count { color: var(--text-muted); font-size: .85rem; margin-left: 6px; }
 .incidents-empty { padding: 24px 0 8px; color: var(--text-muted); }
 .incident-entry { padding: 20px 0; border-bottom: 1px solid var(--border-color); overflow-wrap: anywhere; }
@@ -22,8 +22,8 @@
 .incident-entry h4 { margin: 6px 0 10px; font-size: 1.05rem; }
 .incident-entry h4 span { color: var(--text-muted); font-size: .85rem; font-weight: 400; }
 .incident-excerpt { white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: .9rem; }
-.incident-error { color: #fecaca; margin-top: 14px; }
-.incident-success { color: #a7f3d0; margin: 14px 0 0; }
+.incident-error { color: var(--danger-text); margin-top: 14px; }
+.incident-success { color: var(--success-text); margin: 14px 0 0; }
 .incident-dialog { border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-main); padding: 24px; text-align: left; overflow-wrap: anywhere; }
 .incident-dialog::backdrop { background: #000b; }
 .incident-show-dialog { position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; box-sizing: border-box; overflow-y: auto; }
@@ -42,3 +42,5 @@
 .incident-dialog > button { margin: 12px 0; }
 @media (min-width: 800px) { .incidents-layout { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); } .incident-show-dialog { padding: 36px max(24px, calc((100vw - 960px) / 2)); } }
 @media (max-width: 400px) { .incident-panel { padding: 14px; } .incident-dialog { padding: 18px; } .incident-reason { font-size: 1.2rem; } }
+
+.incidents-view .incident-primary { color:#fff; }

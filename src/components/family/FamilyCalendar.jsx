@@ -8,8 +8,9 @@ import './FamilyCalendar.css';
 import CadenceBuilder from './CadenceBuilder.jsx';
 
 const typeName = id => FAMILY_TYPES.find(type => type.id === id)?.name ?? id;
-const hours = (entrada, salida) => `${entrada}–${salida}${salida < entrada ? ' (+1 día)' : ''}`;
+const hours = (entrada, salida, is24HourShift = false) => `${entrada}–${salida}${salida < entrada || (is24HourShift && entrada === salida) ? ' (+1 día)' : ''}`;
 const ownTurnName = (log, type) => ({ manana: 'Mañana', tarde: 'Tarde', noche: 'Noche', guardia24: 'Guardia 24 h', turno12: 'Turno 12 h', jornada_adicional: 'Adicional', sabado_alterno: 'Sábado', libre: 'Libre' }[log?.tipoTurnoId] ?? type?.nombre?.replace(/\s*\([^)]*\)/g, '') ?? log?.tipoTurnoId);
+const ownTurnCode = (log, type) => ({ manana: 'M', tarde: 'T', noche: 'N', guardia24: '24', turno12: '12', jornada_adicional: 'Ad', sabado_alterno: 'S', libre: 'L', vacaciones: 'V' }[log?.tipoTurnoId] ?? type?.nombreCorto ?? '?');
 
 export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
   const [month, setMonth] = useState(() => formatDateToISO(new Date()).slice(0, 7));
@@ -31,7 +32,7 @@ export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
   const types = getShiftTypes();
   const [year, monthNumber] = month.split('-').map(Number);
   const monthGrid = getMonthDaysGrid(year, monthNumber - 1);
-  const grid = monthGrid.slice(0, monthGrid.findLastIndex(day => day.isCurrentMonth) + 1);
+  const grid = monthGrid.slice(0, Math.ceil((monthGrid.findLastIndex(day => day.isCurrentMonth) + 1) / 7) * 7);
   const currentPattern = data.patterns.find(pattern => pattern.id === patternId);
   const options = { patternId, anchor, start: rangeStart, end: rangeEnd };
   const ownFor = date => ownLogs.find(log => log.fecha === date);
@@ -61,13 +62,11 @@ export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
   const changeRange = setter => event => { setter(event.target.value); setPreview(null); };
 
   return <section className="family-view" aria-label="Calendario de los dos">
-    <p className="family-intro">Tus turnos vienen del calendario anual. Aquí añades los de {data.partnerName}; no afectan a tu nómina.</p>
+    <div className="family-calendar-board">
     <div className="family-month-toolbar"><button type="button" aria-label="Mes anterior" onClick={() => moveMonth(-1)}>←</button><label>Mes<input type="month" value={month} onChange={e => { if (e.target.value) setMonth(e.target.value); }} /></label><button type="button" aria-label="Mes siguiente" onClick={() => moveMonth(1)}>→</button></div>
-    <h2>{MONTH_NAMES[monthNumber - 1]} {year}</h2>
-    <div className="family-legend"><span className="family-person family-person-own">{data.ownName}</span><span className="family-person family-person-partner">{data.partnerName}</span><span className="family-shared-legend">★ Ambos libres</span></div>
-    <p className="family-help">Pulsa un día para ver los horarios. Los días vacíos no tienen turnos registrados. Las noches se muestran en la fecha de entrada.</p>
+    <div className="family-legend"><span className="family-person family-person-own">Arriba: {data.ownName}</span><span className="family-person family-person-partner">Abajo: {data.partnerName}</span><span className="family-shared-legend">★ Ambos libres</span></div>
     <div className="family-grid" role="group" aria-label={`Turnos de ${MONTH_NAMES[monthNumber - 1]} ${year}`}>
-      {DAY_NAMES.map(day => <div className="family-weekday" key={day}>{day}</div>)}
+      {DAY_NAMES.map((day, index) => <div className={`family-weekday ${index >= 5 ? 'family-weekend' : ''}`} key={day}>{day}</div>)}
       {grid.map(day => {
         if (!day.isCurrentMonth) return <div className="family-blank-day" key={day.dateIso} aria-hidden="true" />;
         const own = ownFor(day.dateIso);
@@ -76,14 +75,18 @@ export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
         const bothFree = own?.tipoTurnoId === 'libre' && partner?.tipo === 'libre';
         return <button type="button" key={day.dateIso} className={`family-day ${bothFree ? 'family-both-free' : ''} ${selected === day.dateIso ? 'family-selected' : ''}`} onClick={() => selectDay(day.dateIso)} aria-label={`${formatDateSpanish(day.dateIso)}. ${data.ownName}: ${ownType?.nombre ?? 'sin turno registrado'}. ${data.partnerName}: ${partner ? typeName(partner.tipo) : 'sin asignar'}${bothFree ? '. Ambos libres' : ''}`} aria-pressed={selected === day.dateIso}>
           <strong className="family-day-number">{day.dayNumber}{bothFree && <span className="family-free-star" aria-hidden="true">★</span>}</strong>
-          {own && <span className="family-person family-person-own"><span className="family-person-name">{data.ownName}</span><strong className="family-person-shift">{ownTurnName(own, ownType)}</strong></span>}
-          {partner && <span className="family-person family-person-partner"><span className="family-person-name">{data.partnerName}</span><strong className="family-person-shift">{typeName(partner.tipo)}</strong></span>}
+          <span className={`family-turn-band family-own-band ${!own ? 'family-no-data' : ''}`} title={`${data.ownName}: ${own ? ownTurnName(own, ownType) : 'sin turno registrado'}`} aria-hidden="true">{own && <strong className={ownTurnCode(own, ownType).length > 2 ? 'family-code-long' : ''}>{ownTurnCode(own, ownType)}</strong>}</span>
+          <span className={`family-turn-band family-partner-band ${!partner ? 'family-no-data' : ''}`} title={`${data.partnerName}: ${partner ? typeName(partner.tipo) : 'sin turno registrado'}`} aria-hidden="true">{partner && <strong>{FAMILY_TYPES.find(type => type.id === partner.tipo)?.short}</strong>}</span>
         </button>;
       })}
     </div>
+    <p className="family-code-legend">D: día · M: mañana · T: tarde · N: noche · L: libre · 24: guardia · Ad: adicional · V: vacaciones</p>
+    <p className="family-help">Toca un día para ver los horarios completos. Vacío significa sin datos. Las noches se anotan en su fecha de entrada.</p>
+    </div>
+    <p className="family-intro">Tus turnos vienen del calendario anual. Aquí añades los de {data.partnerName}; no afectan a tu nómina.</p>
     {selected && <div className="family-panel family-editor" ref={editor}>
       <h3>{formatDateSpanish(selected)}</h3>
-      <p className="family-own"><strong>{data.ownName}:</strong> {ownFor(selected) ? `${types.find(type => type.id === ownFor(selected).tipoTurnoId)?.nombre ?? ownFor(selected).tipoTurnoId} · ${hours(ownFor(selected).horaEntradaReal ?? '00:00', ownFor(selected).horaSalidaReal ?? '00:00')}` : 'Sin turno registrado'}</p>
+      <p className="family-own"><strong>{data.ownName}:</strong> {ownFor(selected) ? `${types.find(type => type.id === ownFor(selected).tipoTurnoId)?.nombre ?? ownFor(selected).tipoTurnoId} · ${hours(ownFor(selected).horaEntradaReal ?? '00:00', ownFor(selected).horaSalidaReal ?? '00:00', ownFor(selected).tipoTurnoId === 'guardia24')}` : 'Sin turno registrado'}</p>
       <button type="button" className="family-link" onClick={onOpenCalendar}>Editar mis turnos en el calendario anual</button>
       <form onSubmit={event => { event.preventDefault(); run(() => { setData(saveFamilyShift({ ...shift, fecha: selected })); setMessage('Turno familiar guardado. El resto de la cadencia se conserva.'); setPreview(null); }); }}>
         <h3>Turno de {data.partnerName}</h3>
@@ -95,8 +98,8 @@ export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
       </form>
     </div>}
     {error && <p className="family-error" role="alert">{error}</p>}{message && <p className="family-success" role="status">{message}</p>}
-    <div className="family-panel">
-      <h3>Aplicar una cadencia</h3><p>Rellena solo el mes o el rango que elijas. No se añade ningún turno hasta que confirmes.</p>
+    <details className="family-panel family-apply-panel">
+      <summary>Aplicar una cadencia</summary><p>Rellena solo el mes o el rango que elijas. No se añade ningún turno hasta que confirmes.</p>
       <label>Cadencia<select value={patternId} onChange={event => { setPatternId(event.target.value); setAnchor(data.patterns.find(pattern => pattern.id === event.target.value)?.anchor ?? formatDateToISO(new Date())); setPreview(null); }}>{data.patterns.map(pattern => <option key={pattern.id} value={pattern.id}>{pattern.name}</option>)}</select></label>
       <p className="family-sequence">{currentPattern?.steps.map(step => FAMILY_TYPES.find(type => type.id === step.tipo)?.short).join(' → ')} · {currentPattern?.steps.length} días</p>
       <label>Fecha del primer día del ciclo<input type="date" value={anchor} onChange={changeRange(setAnchor)} /></label>
@@ -106,7 +109,7 @@ export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
       <label className="family-checkbox"><input type="checkbox" checked={replace} onChange={e => { setReplace(e.target.checked); setPreview(null); }} />Sustituir los turnos ya guardados en ese rango, incluidos cambios manuales</label>
       <button type="button" onClick={() => run(() => setPreview(previewFamilyPattern(options)))}>Ver vista previa</button>
       {preview && <div className="family-preview"><p><strong>{preview.length} días.</strong> {replace ? 'Se sustituirán los días existentes.' : `Se conservarán ${preview.filter(item => familyFor(item.fecha)).length} días ya guardados.`}</p><ul>{preview.slice(0, 14).map(item => <li key={item.fecha}>{formatDateSpanish(item.fecha)}: {typeName(item.tipo)} {item.tipo !== 'libre' && hours(item.entrada, item.salida)}</li>)}</ul>{preview.length > 14 && <p>La secuencia continúa hasta {formatDateSpanish(rangeEnd)}.</p>}<button className="family-primary" type="button" onClick={() => run(() => { const result = applyFamilyPattern(options, replace); setData(result.data); setPreview(null); setMessage(`Guardados ${result.added} días. Conservados ${result.skipped} días existentes.`); if (selected) setShift(result.data.shifts.find(item => item.fecha === selected) ?? { ...familyStep('dia'), notas: '' }); })}>Confirmar aplicación</button></div>}
-    </div>
+    </details>
     <details className="family-panel"><summary>Crear o adaptar una cadencia</summary>
       <CadenceBuilder patterns={data.patterns} onSave={(name, steps) => {
         const updated = saveFamilyPattern(name, steps);
@@ -114,6 +117,6 @@ export default function FamilyCalendar({ active, refreshKey, onOpenCalendar }) {
         setPreview(null); setMessage('Cadencia guardada. Selecciona las fechas para aplicarla al calendario.');
       }} />
     </details>
-    <form className="family-panel" onSubmit={event => { event.preventDefault(); run(() => { setData(saveFamilyName(name, ownName)); setMessage('Nombres actualizados.'); }); }}><h3>Nombres del calendario</h3><label>Tu nombre<input required value={ownName} onChange={e => setOwnName(e.target.value)} /></label><label>Nombre de tu pareja<input required value={name} onChange={e => setName(e.target.value)} /></label><button type="submit">Guardar nombres</button></form>
+    <details className="disclosure-panel"><summary><span>Nombres del calendario<small>Cómo aparecéis en la vista familiar</small></span></summary><div className="disclosure-body"><form className="family-names-form" onSubmit={event => { event.preventDefault(); run(() => { setData(saveFamilyName(name, ownName)); setMessage('Nombres actualizados.'); }); }}><label>Tu nombre<input required value={ownName} onChange={e => setOwnName(e.target.value)} /></label><label>Nombre de tu pareja<input required value={name} onChange={e => setName(e.target.value)} /></label><button type="submit">Guardar nombres</button></form></div></details>
   </section>;
 }

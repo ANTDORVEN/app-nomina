@@ -1,5 +1,38 @@
 # TES Control & Nómina — Documento de Traspaso del Proyecto
 
+## Versión autorizada para publicar — 21/10/2026
+
+- Antonio autoriza subir la versión actual para usarla en su móvil. Se aparca la monetización y la distribución en tiendas; esta autorización corresponde a actualizar la web personal existente en Netlify.
+- Incluye los cambios visuales aprobados: claro/oscuro persistente, secciones desplegables, calendario anual simplificado, días libres azul grisáceo suave y calendario familiar claro/oscuro. Las propuestas posteriores para suavizar el familiar no se implementaron: se publica el estado probado actual.
+- Solo código: no se incluyen datos de localhost ni de las pruebas. Se conserva el dominio y las claves de almacenamiento de fichajes, tarifas, incidencias y calendarios. No borrar datos del navegador ni reinstalar para actualizar.
+- Validación previa a publicar: 42 pruebas superadas, lint/build correctos; archivo de producción `index-DIFpYS8j.js`. Las notas anteriores de solo local son el historial previo a esta autorización.
+
+## Calendario anual más discreto — 21/10/2026, solo local
+
+- Tras ver la captura con guardias alternadas y muchas casillas Libre, Antonio indica que todavía le choca visualmente. Se sustituyen las tarjetas y barras por una cuadrícula continua con líneas suaves: descansos blancos con Libre pequeño, turnos con fondo tintado según su color y guardias con 24 h grande. Fuera del mes solo se muestran números discretos; se quitan semanas completas que no contienen ningún día del mes visible.
+- Cabecera con mes, Hoy y flechas; generación de patrones/ausencias y borrado de cadencias en Organizar turnos, bajo la cuadrícula. Leyenda también plegada debajo. Se elimina el tooltip nativo largo; notas y horarios se consultan al pulsar el día. Las casillas son botones con descripción accesible y apertura por teclado.
+- Sin cambios de datos o cálculo. Lint/build correctos. Navegador aislado con diciembre y 8 guardias sintéticas: 35 casillas, claro/oscuro y anchuras 320/390/1100 sin desbordamiento, apertura por teclado con horario 08:00–08:00 conservado, herramientas de generar/borrar accesibles y almacenamiento intacto. Capturas revisadas en móvil y ordenador. No publicado.
+
+## Secciones desplegables — 21/10/2026, solo local
+
+- Antonio pide mostrar lo importante de un vistazo y desplegar las herramientas de consulta/edición, con una presentación sencilla inspirada en las filas de ajustes de iOS. En Resumen Nómina quedan visibles el importe, las horas y los totales fijo/variable; desglose y lista de días (con contador) están plegados inicialmente. El listado de Fichar también se pliega.
+- Formularios y consulta de horas reales en desplegables separados; pulsar Editar, tanto en su historial como desde Resumen, abre automáticamente el formulario y mantiene la fecha. Ajustes se divide en salario/antigüedad, tarifas y horarios; exportar copia sigue visible e importar/copiar se despliega. También se pliegan añadir incidencia, añadir periodo y nombres familiares. Editar incidencia abre y enfoca su formulario. Los campos inválidos de Ajustes abren su panel antes de la validación del navegador.
+- Se usan detalles nativos, sin desmontar formularios ni cambiar el almacenamiento o el cálculo. Las pausas del contador y el aviso de cómputo pendiente siguen visibles. Texto de la métrica Horas Liquidadas cambiado a Horas registradas para describir el dato mostrado.
+- Comprobado en navegador aislado con 16 días sintéticos: plegar/desplegar no cambia importes ni datos, borrador de edición conservado, edición de horas reales desde Resumen abre el formulario y mantiene el cuadrante, validación de ajustes y edición de incidencias accesibles. Repetidas pruebas de cadencias/navegación y siete secciones en claro/oscuro a 320/390/1280px sin desbordamiento. 42 pruebas existentes superadas, lint/build correctos. Solo local; pendiente revisión de Antonio en su móvil.
+
+## Aspecto claro y oscuro — 21/10/2026, solo local
+
+- Antonio solicita simplificar la presentación de toda la app y conservar las funciones. Se elimina el CSS sobrante de la plantilla y se centraliza la paleta en `variables.css`: superficies claras por defecto y alternativa oscura, con avisos, textos y calendarios adaptados a ambos aspectos. Se mantienen los siete accesos grandes y los colores verde/amarillo/rojo del contador.
+- Selector Claro / Oscuro visible en todas las secciones, gestionado por `ThemeToggle` y `themeService`. Preferencia independiente en `tes_nomina_theme`, aplicada antes de renderizar y conservada al recargar. No modifica datos de nómina, copias, fichajes ni tarifas; si falla el guardado del aspecto se avisa y se conserva el cambio en la sesión.
+- Calendario anual con leyenda desplegable y códigos más grandes; franjas de color para identificar el turno y texto de contraste estable. Familiar conserva azul/rosa por persona y amarillo para ambos libres, también en oscuro. Formularios móviles con texto de 16px para evitar el zoom automático y botones de al menos 44px.
+- Verificación: lint/build correctos y 42 pruebas existentes superadas. Navegador aislado: siete secciones en ambos aspectos a 320/390/1280px sin desbordamiento de página, persistencia tras recarga, borrador conservado, cambio de aspecto con contador activo y pausado sin alterar su registro; cadencias y cuadrante comprobados con datos sintéticos. No se trasladan los datos de prueba. Pendiente revisión de Antonio en su móvil; no publicado.
+
+## Calendario familiar claro — 21/10/2026, solo local
+
+- Antonio aporta como referencia una app con casillas claras y turnos grandes y autoriza probar este diseño en el calendario familiar. El tablero mensual usa fondo claro, números oscuros, líneas continuas y dos franjas de ancho completo y posición fija: arriba azul para Antonio, abajo rosa para su pareja. Los nombres se muestran en la leyenda; códigos grandes M/T/N/D/L/24 y leyenda de significados, con los horarios completos al pulsar el día.
+- Los días sin datos conservan franjas blancas; no equivalen a libre. Ambos libres sigue amarillo y estrella. Fuera del mes se muestran huecos sin números hasta completar las semanas. El resto de la app conserva el estilo oscuro y las herramientas de aplicar/crear cadencias quedan plegadas bajo el calendario.
+- Solo presentación, sin cambios en almacenamiento, turnos ni nómina. Lint/build correctos y prueba de navegador aislado sin errores: calendario, códigos, franjas de ancho completo, coincidencias de libres, creación/edición de cadencias y navegación; sin desbordamiento a 320px. No publicado: la web pública sigue en la versión del 20/10.
+
 ## Versión aprobada para publicar — 20/10/2026
 
 - Antonio aprueba publicar el conjunto de cambios: inicio con siete tarjetas grandes, navegación por secciones, incidencias desde fichaje y registro, horas reales con inclusión opcional en nómina y calendario familiar mensual con nombres, fondos por persona, coincidencias de libres en amarillo y creador visual de cadencias.

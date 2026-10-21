@@ -1,59 +1,34 @@
-/* Design Tokens & CSS Variables para App Nómina TES */
+/* Colores comunes para todas las pantallas. */
 :root {
-  /* Paleta de Colores Principal */
-  --primary-50: #eef2ff;
-  --primary-100: #e0e7ff;
-  --primary-500: #6366f1;
-  --primary-600: #4f46e5;
-  --primary-700: #4338ca;
-
-  /* Colores de Estado / Turnos */
-  --success-500: #10b981; /* Guardia / completado */
-  --warning-500: #f59e0b; /* Mañana / Tarde */
-  --danger-500: #ef4444;  /* Horas extra / Alerta */
-  --info-500: #06b6d4;    /* Festivo / Noche */
-
-  /* Neutrales (Dark Mode Preferido por Defecto) */
-  --bg-app: #0f172a;        /* Fondo principal de la app (Azul oscuro slate) */
-  --bg-card: #1e293b;       /* Fondo de tarjetas */
-  --bg-card-hover: #334155;
-  --text-main: #f8fafc;     /* Texto principal */
-  --text-muted: #94a3b8;    /* Texto secundario / subtítulos */
-  --border-color: #334155;  /* Borde de contenedores */
-
-  /* Colores Badges Turnos TES */
-  --badge-manana: #3b82f6;
-  --badge-tarde: #f59e0b;
-  --badge-noche: #8b5cf6;
-  --badge-guardia: #10b981;
-  --badge-festivo: #ec4899;
-  --badge-libre: #64748b;
-
-  /* Tipografía */
-  --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-
-  /* Sombras y Glassmorphism */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.25);
-  --glass-bg: rgba(30, 41, 59, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.08);
+ color-scheme: light;
+ --primary-50:#eef4fc; --primary-100:#254f86; --primary-500:#3268aa; --primary-600:#285b98; --primary-700:#204c80;
+ --success-500:#17734d; --warning-500:#966000; --danger-500:#b6323e; --info-500:#176b85;
+ --bg-app:#f3f5f8; --bg-card:#fff; --bg-card-hover:#edf1f6; --rest-day-bg:#edf3fa;
+ --text-main:#202d3e; --text-muted:#526174; --border-color:#cdd5e0;
+ --accent-bg:#eaf1fb; --accent-text:#254f86;
+ --success-bg:#e6f4ec; --success-text:#176344; --warning-bg:#fff4d5; --warning-text:#795200;
+ --danger-bg:#fcecef; --danger-text:#a32434; --info-bg:#e6f3f8; --info-text:#185c72;
+ --own-bg:#b8d7f5; --own-text:#163752; --partner-bg:#f7c9df; --partner-text:#54243c;
+ --free-bg:#ffe580; --free-text:#493900; --grid-border:#9caaba; --weekend-bg:#fff0ee;
+ --badge-manana:#2563a6; --badge-tarde:#925900; --badge-noche:#7450aa; --badge-guardia:#18734f; --badge-festivo:#b52d74; --badge-libre:#59697d;
+ --font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+ --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
+ --shadow-sm:0 1px 3px #152b4210; --shadow-md:0 3px 12px #152b4208; --shadow-glow:none;
+ --glass-bg:var(--bg-card); --glass-border:var(--border-color);
 }
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+:root[data-theme="dark"] {
+ color-scheme:dark;
+ --primary-50:#263952; --primary-100:#b5d2ff; --primary-500:#9cc6ff; --primary-600:#315f9e; --primary-700:#294f83;
+ --success-500:#78d6aa; --warning-500:#f0c46e; --danger-500:#ff9ea8; --info-500:#8bcee4;
+ --bg-app:#141b25; --bg-card:#1e2835; --bg-card-hover:#2a3748; --rest-day-bg:#253449;
+ --text-main:#edf2f9; --text-muted:#b0bfd1; --border-color:#445267;
+ --accent-bg:#263952; --accent-text:#b5d2ff;
+ --success-bg:#203e34; --success-text:#a1e7c4; --warning-bg:#453b24; --warning-text:#f4d48b;
+ --danger-bg:#452c36; --danger-text:#ffb3bd; --info-bg:#233b48; --info-text:#a7dceb;
+ --own-bg:#294b6b; --own-text:#e0efff; --partner-bg:#59364b; --partner-text:#ffe2ef;
+ --free-bg:#66541d; --free-text:#ffedac; --grid-border:#66748a; --weekend-bg:#3a2b31;
+ --badge-manana:#8cbfff; --badge-tarde:#efc274; --badge-noche:#c4a8ef; --badge-guardia:#83d4af; --badge-festivo:#f3acd1; --badge-libre:#bac6d6;
+ --shadow-sm:none; --shadow-md:none;
 }
-
-body {
-  font-family: var(--font-family);
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font-family); background:var(--bg-app); color:var(--text-main); line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh; }

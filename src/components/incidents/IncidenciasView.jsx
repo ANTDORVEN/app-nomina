@@ -34,6 +34,7 @@ export default function IncidenciasView() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const formRef = useRef(null);
+  const formPanel = useRef(null);
   useEffect(() => {
     const refresh = () => { try { setIncidents(getIncidents()); } catch (err) { setError(err.message); } };
     refresh();
@@ -49,6 +50,7 @@ export default function IncidenciasView() {
     reset();
   }
   function edit(incident) {
+    formPanel.current.open = true;
     setEditing(incident); setError(''); setMessage('');
     formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     formRef.current.querySelector('input').focus({ preventScroll: true });
@@ -64,7 +66,9 @@ export default function IncidenciasView() {
     <h2 id="incidents-title">Incidencias</h2>
     <p className="incidents-intro">Anota lo ocurrido y consúltalo cuando lo necesites. Se guarda en este navegador y en tus copias de seguridad.</p>
     <div className="incidents-layout">
+      <details className="disclosure-panel incident-form-panel" ref={formPanel}><summary><span>{editing ? 'Editar incidencia' : 'Añadir incidencia'}<small>Fecha, vehículo y motivo</small></span></summary><div className="disclosure-body">
       <IncidentForm key={editing?.id ?? 'new'} incident={editing} formRef={formRef} onSaved={saved} onCancel={editing ? reset : undefined} />
+      </div></details>
       <div className="incident-panel">
         <h3>Registro de incidencias <span className="incident-count">{incidents.length}</span></h3>
         <label htmlFor="incident-search">Buscar por fecha o matrícula</label><input id="incident-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="19/10/2026 o 1234 ABC" />
