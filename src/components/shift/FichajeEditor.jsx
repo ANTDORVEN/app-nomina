@@ -1,20 +1,21 @@
+import { baseShiftId, shiftSelectionFields } from '../../services/customShiftService.js';
 import React, { useState } from 'react';
 import { updateTimeLog } from '../../services/shiftService.js';
 import { calculateWorkedHours, formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 
 export default function FichajeEditor({ log, shiftTypes, onSaved, onCancel }) {
-  const [tipoTurnoId, setTipoTurnoId] = useState(log.tipoTurnoId);
+  const [tipoTurnoId, setTipoTurnoId] = useState(log.tipoTurnoPersonalizadoId ?? log.tipoTurnoId);
   const [entrada, setEntrada] = useState(log.horaEntradaReal ?? '08:00');
   const [salida, setSalida] = useState(log.horaSalidaReal ?? '16:00');
   const [esFestivo, setEsFestivo] = useState(log.esFestivo === true);
   const [notas, setNotas] = useState(log.notas ?? '');
   const [error, setError] = useState('');
   const shift = shiftTypes.find(item => item.id === tipoTurnoId);
-  const sinJornada = shift?.esAusencia === true || tipoTurnoId === 'libre';
-  const sinCambiosHorario = tipoTurnoId === log.tipoTurnoId
+  const sinJornada = shift?.esAusencia === true || baseShiftId(tipoTurnoId, shiftTypes) === 'libre';
+  const sinCambiosHorario = tipoTurnoId === (log.tipoTurnoPersonalizadoId ?? log.tipoTurnoId)
     && entrada === log.horaEntradaReal && salida === log.horaSalidaReal;
   const horas = sinJornada ? 0 : sinCambiosHorario ? Number(log.horasTrabajadas)
-    : tipoTurnoId === 'guardia24' && entrada === salida ? 24 : calculateWorkedHours(entrada, salida);
+    : baseShiftId(tipoTurnoId, shiftTypes) === 'guardia24' && entrada === salida ? 24 : calculateWorkedHours(entrada, salida);
 
   const changeType = event => {
     const id = event.target.value;
@@ -28,15 +29,15 @@ export default function FichajeEditor({ log, shiftTypes, onSaved, onCancel }) {
       setError('Revisa las horas de entrada y salida.');
       return;
     }
-    const descanso = sinJornada ? 0 : log.registroEnVivo || tipoTurnoId === log.tipoTurnoId
+    const descanso = sinJornada ? 0 : log.registroEnVivo || tipoTurnoId === (log.tipoTurnoPersonalizadoId ?? log.tipoTurnoId)
       ? (log.horasDescansoNoPagadas ?? shift?.horasDescansoNoPagadas ?? 0)
       : (shift?.horasDescansoNoPagadas ?? 0);
     const saved = updateTimeLog(log.id || log.fecha, {
-      tipoTurnoId,
+      ...shiftSelectionFields(tipoTurnoId, shiftTypes),
       horaEntradaReal: sinJornada ? '00:00' : entrada,
       horaSalidaReal: sinJornada ? '00:00' : salida,
       horasTrabajadas: horas,
-      horasExtra: tipoTurnoId === 'guardia24' ? 0 : tipoTurnoId === 'jornada_adicional'
+      horasExtra: baseShiftId(tipoTurnoId, shiftTypes) === 'guardia24' ? 0 : baseShiftId(tipoTurnoId, shiftTypes) === 'jornada_adicional'
         ? Math.max(0, horas - descanso) : Math.max(0, horas - descanso - 8),
       horasDescansoNoPagadas: descanso,
       horasNocturnas: sinCambiosHorario ? log.horasNocturnas : undefined,
@@ -67,7 +68,7 @@ export default function FichajeEditor({ log, shiftTypes, onSaved, onCancel }) {
         <label>Salida<input type="time" value={salida} onChange={event => setSalida(event.target.value)} required /></label>
       </div>}
       <p className="log-editor-preview">Duración: <strong>{formatHoursToHHMM(horas)}</strong>
-        {tipoTurnoId === 'jornada_adicional' && ' · Jornada adicional pagada completa, descontando descansos.'}</p>
+        {baseShiftId(tipoTurnoId, shiftTypes) === 'jornada_adicional' && ' · Jornada adicional pagada completa, descontando descansos.'}</p>
       {!sinJornada && <label className="log-editor-checkbox">
         <input type="checkbox" checked={esFestivo || shift?.esFestivo === true}
           disabled={shift?.esFestivo === true} onChange={event => setEsFestivo(event.target.checked)} />

@@ -1,6 +1,7 @@
+import { getSelectableShiftTypes, normalizeShiftSelection } from './customShiftService.js';
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from './storageService.js';
 import { getAllTimeLogs, getShiftTypes } from './shiftService.js';
-import { calculateWorkedHours } from '../utils/dateUtils.js';
+import { recordDuration, recordEndDate } from '../utils/recordTimeUtils.js';
 
 export function getRealTimeRecords() {
   const records = getStorageItem(STORAGE_KEYS.REAL_TIME_RECORDS, []);
@@ -17,7 +18,9 @@ export function scheduledWorkForDate(fecha) {
   }) ?? null;
 }
 
-export function validateRealTimeRecord(data, shiftTypes = getShiftTypes()) {
+export function validateRealTimeRecord(data, shiftTypes = getSelectableShiftTypes()) {
+  data = { ...data, ...normalizeShiftSelection(data, shiftTypes) };
+  if (data.tipoTurnoPersonalizadoId === undefined) delete data.tipoTurnoPersonalizadoId;
   const date = new Date(`${data?.fecha}T12:00:00`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data?.fecha ?? '') || !Number.isFinite(date.getTime())
     || `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` !== data.fecha) throw new Error('Revisa la fecha.');
@@ -27,8 +30,11 @@ export function validateRealTimeRecord(data, shiftTypes = getShiftTypes()) {
   if (typeof data.contarEnNomina !== 'boolean') throw new Error('Elige Sí o No para la nómina.');
   const type = shiftTypes.find(item => item.id === data.tipoTurnoId && !item.esAusencia && item.id !== 'libre');
   if (!type) throw new Error('Selecciona un tipo de turno de trabajo.');
-  let hours = data.tipoTurnoId === 'guardia24' && data.horaEntradaReal === data.horaSalidaReal
-    ? 24 : calculateWorkedHours(data.horaEntradaReal, data.horaSalidaReal);
+  const endDate = recordEndDate(data);
+  const endDay = new Date(`${endDate}T12:00:00`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate) || !Number.isFinite(endDay.getTime())
+    || `${endDay.getFullYear()}-${String(endDay.getMonth() + 1).padStart(2, '0')}-${String(endDay.getDate()).padStart(2, '0')}` !== endDate) throw new Error('Revisa la fecha de salida.');
+  let hours = recordDuration(data);
   if (data.registroEnVivo) {
     const { startedAt, endedAt } = data.registroEnVivo;
     const start = new Date(startedAt);
@@ -36,13 +42,14 @@ export function validateRealTimeRecord(data, shiftTypes = getShiftTypes()) {
     const time = value => `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
     if (!Number.isFinite(startedAt) || !Number.isFinite(endedAt) || endedAt <= startedAt
       || `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}` !== data.fecha
+      || `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}` !== endDate
       || time(start) !== data.horaEntradaReal || time(end) !== data.horaSalidaReal) throw new Error('Los tiempos del contador no coinciden con el registro.');
     hours = (endedAt - startedAt) / 3600000;
   }
-  if (hours <= 0) throw new Error('La entrada y la salida deben ser distintas, salvo una guardia de 24 horas.');
+  if (!Number.isFinite(hours) || hours <= 0) throw new Error('La salida debe ser posterior a la entrada. Revisa también el día de salida.');
   const pause = Number(data.horasDescansoNoPagadas ?? 0);
   if (!Number.isFinite(pause) || pause < 0 || pause > hours) throw new Error('La pausa debe estar entre cero y la duración del turno.');
-  return { ...data, horasTrabajadas: hours, horasDescansoNoPagadas: pause, esFestivo: data.esFestivo === true };
+  return { ...data, fechaSalidaReal: endDate, horasTrabajadas: hours, horasDescansoNoPagadas: pause, esFestivo: data.esFestivo === true };
 }
 
 export function validateRealTimeBackup(data, shiftTypes) {

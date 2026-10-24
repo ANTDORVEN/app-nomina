@@ -219,3 +219,7 @@
   color: var(--success-text);
   font-size: 0.85rem;
 }
+
+.log-real-comparison { margin-top:14px; padding:12px; background:var(--accent-bg); color:var(--text-main); border-radius:8px; font-size:.85rem; }
+.log-real-comparison p { margin-bottom:8px; }
+.log-real-comparison .btn-secondary { white-space:normal; }

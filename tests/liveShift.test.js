@@ -75,3 +75,31 @@ test('un fallo al guardar conserva el contador y permite reintentar sin duplicad
     assert.equal(getLiveShift(), null);
   } finally { console.error = originalError; }
 });
+
+
+test('descartar un turno terminado libera el contador y conserva cuadrante y horas reales', () => {
+  const session = finish();
+  values.set('tes_nomina_time_logs', '[{"id":"conservar"}]');
+  values.set('tes_nomina_real_time_records', '[{"id":"real_conservar"}]');
+  assert.equal(changeLiveShift(session, 'discard'), null);
+  assert.equal(getLiveShift(), null);
+  assert.equal(values.get('tes_nomina_time_logs'), '[{"id":"conservar"}]');
+  assert.equal(values.get('tes_nomina_real_time_records'), '[{"id":"real_conservar"}]');
+  assert.equal(changeLiveShift(null, 'start', start + 24 * hour).startedAt, start + 24 * hour);
+});
+
+test('descartar exige turno terminado y una ventana actualizada', () => {
+  const session = changeLiveShift(null, 'start', start);
+  assert.throws(() => changeLiveShift(session, 'discard'));
+  const ended = changeLiveShift(session, 'finish', start + hour);
+  assert.throws(() => changeLiveShift(session, 'discard'));
+  assert.deepEqual(getLiveShift(), ended);
+});
+
+test('si falla el guardado al descartar, el turno pendiente se conserva', () => {
+  const session = finish();
+  const original = console.error; console.error = () => {};
+  localStorage.setItem = () => { throw new Error('Sin espacio'); };
+  try { assert.throws(() => changeLiveShift(session, 'discard')); assert.deepEqual(getLiveShift(), session); }
+  finally { console.error = original; }
+});

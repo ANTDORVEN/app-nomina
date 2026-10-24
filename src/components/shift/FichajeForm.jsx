@@ -1,5 +1,6 @@
+import { getSelectableShiftTypes, baseShiftId, shiftSelectionFields } from '../../services/customShiftService.js';
 import React, { useState, useEffect } from 'react';
-import { getShiftTypes, saveTimeLog, getPeriodForDate } from '../../services/shiftService.js';
+import { saveTimeLog, getPeriodForDate } from '../../services/shiftService.js';
 import { formatDateToISO, calculateWorkedHours, formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
 import './FichajeForm.css';
 
@@ -7,7 +8,7 @@ import './FichajeForm.css';
  * FichajeForm.jsx - Formulario de fichaje con notificación visual tipo Toast '✅ Fichaje guardado'.
  */
 export default function FichajeForm({ onLogSaved, onAddIncident }) {
-  const shiftTypes = getShiftTypes();
+  const shiftTypes = getSelectableShiftTypes();
   
   const [fecha, setFecha] = useState(formatDateToISO(new Date()));
   const [tipoTurnoId, setTipoTurnoId] = useState('manana');
@@ -38,11 +39,11 @@ export default function FichajeForm({ onLogSaved, onAddIncident }) {
   }, [fecha]);
 
   // Cálculo en tiempo real de las horas trabajadas
-  const horasTrabajadasCalculadas = tipoTurnoId === 'guardia24' && horaEntrada === horaSalida
+  const horasTrabajadasCalculadas = baseShiftId(tipoTurnoId, shiftTypes) === 'guardia24' && horaEntrada === horaSalida
     ? 24 : calculateWorkedHours(horaEntrada, horaSalida);
   const selectedShiftObj = shiftTypes.find(s => s.id === tipoTurnoId);
   const horasExtraAuto = Math.max(0, horasTrabajadasCalculadas - (selectedShiftObj?.horasDescansoNoPagadas ?? 0) - 8);
-  const totalHorasExtra = tipoTurnoId === 'guardia24' ? 0 : tipoTurnoId === 'jornada_adicional'
+  const totalHorasExtra = baseShiftId(tipoTurnoId, shiftTypes) === 'guardia24' ? 0 : baseShiftId(tipoTurnoId, shiftTypes) === 'jornada_adicional'
     ? Math.max(0, horasTrabajadasCalculadas - (selectedShiftObj?.horasDescansoNoPagadas ?? 0))
     : horasExtraAuto;
 
@@ -51,12 +52,15 @@ export default function FichajeForm({ onLogSaved, onAddIncident }) {
 
     const logData = {
       fecha,
-      tipoTurnoId,
+      ...shiftSelectionFields(tipoTurnoId, shiftTypes),
+      horasDescansoNoPagadas: selectedShiftObj?.horasDescansoNoPagadas ?? 0,
       horaEntradaReal: horaEntrada,
       horaSalidaReal: horaSalida,
       horasTrabajadas: horasTrabajadasCalculadas,
       horasExtra: totalHorasExtra,
       esFestivo,
+      esAusencia: selectedShiftObj?.esAusencia === true,
+      esPatronAuto: false,
       notas
     };
 
@@ -117,7 +121,7 @@ export default function FichajeForm({ onLogSaved, onAddIncident }) {
               </option>
             ))}
           </select>
-          {tipoTurnoId === 'jornada_adicional' && (
+          {baseShiftId(tipoTurnoId, shiftTypes) === 'jornada_adicional' && (
             <small>Se paga toda la jornada como complemento, descontando el descanso no pagado. Si marcas festivo, se aplica solo la tarifa festiva.</small>
           )}
         </div>

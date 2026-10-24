@@ -102,3 +102,7 @@
 }
 
 .family-view .family-primary { color:#fff; }
+
+.family-turn-band { gap:5px; }
+.family-person-icon { font-size:.8rem; line-height:1; flex-shrink:0; }
+@media(max-width:500px) { .family-turn-band { gap:2px; } .family-person-icon { font-size:.6rem; } .family-turn-band strong { font-size:1.3rem; } }

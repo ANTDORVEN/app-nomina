@@ -454,3 +454,9 @@
 .calendar-tools .pattern-btn { flex:1 1 180px; white-space:normal; }
 .calendar-legend-panel { border:0; margin-bottom:0; }
 @media(max-width:480px) { .calendar-grid .calendar-day-cell { min-height:86px; padding:6px 3px; } .calendar-header { gap:4px; } .calendar-header .today-btn { padding:4px 7px; } .calendar-header .nav-arrow { min-width:32px; padding:4px 7px; } }
+
+.guardia-repair { margin-bottom:16px; background:var(--warning-bg); }
+.guardia-repair p, .guardia-repair details { margin-bottom:12px; }
+.guardia-repair summary { min-height:44px; padding:10px 0; }
+.modal-form .form-group { min-width:0; }
+.modal-form :is(input,select) { min-width:0; max-width:100%; }

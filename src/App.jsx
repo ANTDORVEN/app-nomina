@@ -72,7 +72,7 @@ function AppScreens({ activeTab, setActiveTab, visited }) {
         <section hidden={activeTab !== 'fichaje'}>{visited.includes('fichaje') && (
           <div className="view-grid">
             <div>
-              <LiveShift onLogSaved={handleLogSaved} onAddIncident={() => setIncidentDateTime(currentIncidentDateTime())} onViewIncidents={() => setActiveTab('incidencias')} />
+              <LiveShift onViewRealRecord={editRealRecord} onLogSaved={handleLogSaved} onAddIncident={() => setIncidentDateTime(currentIncidentDateTime())} onViewIncidents={() => setActiveTab('incidencias')} />
               <RealTimeRecords onUpdated={handleLogSaved} refreshKey={realRefresh} editDate={editRealDate} />
               <details className="manual-fichaje disclosure-panel"><summary>Registrar una jornada manualmente</summary>
                 <FichajeForm onLogSaved={handleLogSaved} onAddIncident={date => setIncidentDateTime(`${date}T${currentIncidentDateTime().slice(11)}`)} />

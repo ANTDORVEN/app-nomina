@@ -25,7 +25,8 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
   const shiftTypes = getShiftTypes();
   const libreShift = shiftTypes.find(s => s.id === 'libre') || { id: 'libre', horaInicio: '00:00', horaFin: '00:00', horasTeoricas: 0 };
 
-  const horasGuardia = calculateWorkedHours(horaInicio, horaSalida) || 24;
+  if (![horaInicio, horaSalida].every(time => /^([01]\d|2[0-3]):[0-5]\d$/.test(time))) throw new Error('Revisa las horas del patrón.');
+  const horasGuardia = horaInicio === horaSalida ? 24 : calculateWorkedHours(horaInicio, horaSalida);
 
   let currDate = new Date(startDate);
   let dayCounter = 0;
@@ -37,6 +38,7 @@ export function generateGuardias24hPattern(fechaInicioGuardia, numeroMeses = 6, 
       saveTimeLog({
         fecha: isoDate,
         tipoTurnoId: 'guardia24',
+        horarioPersonalizado: true,
         horaEntradaReal: horaInicio,
         horaSalidaReal: horaSalida,
         horasTrabajadas: horasGuardia,
@@ -83,7 +85,7 @@ export function generateLunesViernesPattern(fechaInicio, numeroMeses = 6, fechaF
   const shiftTypes = getShiftTypes();
   const shiftObj = shiftTypes.find(s => s.id === tipoTurnoId) || shiftTypes[0];
 
-  const horasCalc = calculateWorkedHours(horaInicio, horaSalida);
+  const horasCalc = tipoTurnoId === 'guardia24' && horaInicio === horaSalida ? 24 : calculateWorkedHours(horaInicio, horaSalida);
 
   let currDate = new Date(startDate);
 

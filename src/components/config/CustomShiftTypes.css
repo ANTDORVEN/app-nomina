@@ -1,0 +1,5 @@
+.custom-shift-types .disclosure-body, .custom-shift-types form { display:grid; gap:14px; }
+.custom-shift-types label { display:grid; gap:6px; font-size:.9rem; min-width:0; }
+.custom-shift-types :is(input,select) { width:100%; min-width:0; min-height:44px; padding:10px; border:1px solid var(--border-color); border-radius:8px; font:inherit; color:var(--text-main); background:var(--bg-app); }
+.custom-shift-types input[type=color] { width:90px; padding:4px; }
+.custom-shift-types select:disabled { opacity:.8; }

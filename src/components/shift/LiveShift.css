@@ -26,3 +26,9 @@
 .live-review button:disabled { opacity: .5; cursor: not-allowed; }
 .manual-fichaje summary { cursor: pointer; min-height: 48px; padding: 12px; box-sizing: border-box; color: var(--text-muted); text-align: left; }
 .manual-fichaje[open] summary { margin-bottom: 10px; }
+
+.live-pending-panel { background:var(--warning-bg); color:var(--warning-text); padding:14px; border-radius:12px; margin:14px 0; font-size:.9rem; }
+.live-pending-panel p { margin-bottom:8px; }
+.live-pending-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.live-pending-actions button { flex:1 1 160px; min-height:44px; white-space:normal; }
+.live-review { scroll-margin-top:16px; }

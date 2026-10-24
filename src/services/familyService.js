@@ -13,10 +13,7 @@ export const familyStep = type => {
   if (!item) throw new Error('Tipo de turno familiar no válido.');
   return { tipo: item.id, entrada: item.start, salida: item.end };
 };
-const defaultData = () => ({ ownName: 'Antonio', partnerName: 'Mi mujer', shifts: [], patterns: [
-  { id: 'dia-noche-11', name: 'Día, noche y descansos (11 días)', steps: ['dia', 'noche', 'libre', 'libre', 'libre', 'dia', 'noche', 'libre', 'libre', 'libre', 'libre'].map(familyStep) },
-  { id: 'semana-manana', name: 'Semana de mañanas (L–V)', steps: ['manana', 'manana', 'manana', 'manana', 'manana', 'libre', 'libre'].map(familyStep) }
-] });
+const defaultData = () => ({ ownName: 'Antonio', partnerName: 'Mi mujer', ownIcon: '🚑', partnerIcon: '🏥', shifts: [], patterns: [] });
 
 export function validFamilyDate(value) {
   const parsed = new Date(`${value}T12:00:00`);
@@ -44,7 +41,10 @@ export function validateFamilyData(data) {
     return { ...pattern, steps: pattern.steps.map(validateStep) };
   });
   if (data.ownName !== undefined && (typeof data.ownName !== 'string' || !data.ownName.trim())) throw new Error('Introduce tu nombre para el calendario.');
-  return { ...data, ownName: data.ownName?.trim() || 'Antonio', partnerName: data.partnerName.trim(), shifts, patterns };
+  for (const key of ['ownIcon', 'partnerIcon']) {
+    if (data[key] !== undefined && (typeof data[key] !== 'string' || Array.from(data[key]).length > 16)) throw new Error('Usa un icono o emoji corto para cada persona.');
+  }
+  return { ...data, ownIcon: data.ownIcon ?? '🚑', partnerIcon: data.partnerIcon ?? '🏥', ownName: data.ownName?.trim() || 'Antonio', partnerName: data.partnerName.trim(), shifts, patterns };
 }
 export function getFamilyData() {
   return validateFamilyData(getStorageItem(STORAGE_KEYS.FAMILY_CALENDAR, defaultData()));
@@ -54,7 +54,7 @@ function write(data) {
   if (!setStorageItem(STORAGE_KEYS.FAMILY_CALENDAR, checked)) throw new Error('No se ha podido guardar el calendario familiar. Los datos anteriores se conservan.');
   return checked;
 }
-export function saveFamilyName(name, ownName = getFamilyData().ownName) { return write({ ...getFamilyData(), partnerName: name, ownName }); }
+export function saveFamilyName(name, ownName = getFamilyData().ownName, ownIcon = getFamilyData().ownIcon, partnerIcon = getFamilyData().partnerIcon) { return write({ ...getFamilyData(), partnerName: name, ownName, ownIcon, partnerIcon }); }
 export function saveFamilyShift(shift) {
   const data = getFamilyData();
   const saved = { ...validateStep(shift), fecha: shift.fecha, notas: shift.notas ?? '', manual: true, updatedAt: new Date().toISOString() };

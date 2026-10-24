@@ -1,9 +1,12 @@
+import CustomShiftTypes from './CustomShiftTypes.jsx';
+import { getCustomShiftTypes, validateCustomShiftTypes, getSelectableShiftTypes } from '../../services/customShiftService.js';
 import React, { useState } from 'react';
 import { getConfig, saveConfig, getAllTimeLogs, getPayrollPeriods, getShiftTypes } from '../../services/shiftService.js';
 import { setStorageItem, STORAGE_KEYS } from '../../services/storageService.js';
 import { getIncidents, validateIncidentBackup } from '../../services/incidentService.js';
 import { getRealTimeRecords, validateRealTimeBackup } from '../../services/realTimeService.js';
 import { getFamilyData, validateFamilyData } from '../../services/familyService.js';
+import { getCustomPatterns, validateCustomPatterns } from '../../services/customPatternService.js';
 import './ConfigView.css';
 
 /**
@@ -82,6 +85,8 @@ export default function ConfigView({ onConfigSaved }) {
       incidents: getIncidents(),
       realTimeRecords: getRealTimeRecords(),
       familyCalendar: getFamilyData(),
+      customPatterns: getCustomPatterns(),
+      customShiftTypes: getCustomShiftTypes(),
       exportedAt: new Date().toISOString()
     };
   };
@@ -188,9 +193,14 @@ export default function ConfigView({ onConfigSaved }) {
   };
 
   const applyImportedData = (imported) => {
+    const bases = Array.isArray(imported.shiftTypes) ? imported.shiftTypes : getShiftTypes();
+    const customShiftTypes = imported.customShiftTypes === undefined ? undefined : validateCustomShiftTypes(imported.customShiftTypes, bases);
+    const selectable = getSelectableShiftTypes(customShiftTypes ?? getCustomShiftTypes(), bases);
+    const customPatterns = imported.customPatterns === undefined ? undefined
+      : validateCustomPatterns(imported.customPatterns, selectable);
     const familyCalendar = imported.familyCalendar === undefined ? undefined : validateFamilyData(imported.familyCalendar);
     const realTimeRecords = imported.realTimeRecords === undefined ? undefined
-      : validateRealTimeBackup(imported.realTimeRecords, Array.isArray(imported.shiftTypes) ? imported.shiftTypes : undefined);
+      : validateRealTimeBackup(imported.realTimeRecords, selectable);
     // Las copias antiguas sin incidencias conservan las ya guardadas.
     if (imported.incidents !== undefined) {
       const incidents = validateIncidentBackup(imported.incidents);
@@ -205,6 +215,14 @@ export default function ConfigView({ onConfigSaved }) {
     }
     if (familyCalendar !== undefined && !setStorageItem(STORAGE_KEYS.FAMILY_CALENDAR, familyCalendar)) {
       alert('No se ha podido restaurar el calendario familiar.');
+      return;
+    }
+    if (customPatterns !== undefined && !setStorageItem(STORAGE_KEYS.CUSTOM_PATTERNS, customPatterns)) {
+      alert('No se han podido restaurar las cadencias personales.');
+      return;
+    }
+    if (customShiftTypes !== undefined && !setStorageItem(STORAGE_KEYS.CUSTOM_SHIFT_TYPES, customShiftTypes)) {
+      alert('No se han podido restaurar los tipos de turno personales.');
       return;
     }
     if (imported.config) setStorageItem(STORAGE_KEYS.CONFIG, imported.config);
@@ -388,6 +406,8 @@ export default function ConfigView({ onConfigSaved }) {
           💾 Guardar Tarifas y Desglose ATH
         </button>
       </form>
+
+      <CustomShiftTypes onSaved={onConfigSaved} />
 
       {/* Copias de seguridad */}
       <div className="backup-section">

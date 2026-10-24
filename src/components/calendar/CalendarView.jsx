@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { getSelectableShiftTypes, getDisplayShiftType, baseShiftId, shiftSelectionFields } from '../../services/customShiftService.js';
+import React, { useState } from 'react';
 import { MONTH_NAMES, DAY_NAMES, getMonthDaysGrid } from '../../utils/calendarUtils.js';
-import { getAllTimeLogs, getShiftTypes, saveTimeLog, deleteTimeLog } from '../../services/shiftService.js';
-import { generateGuardias24hPattern, generateLunesViernesPattern, generateFinDeSemanaAlternoPattern, generateAusenciaPattern, previewDeletePatternInRange, deletePatternInRange } from '../../services/patternService.js';
+import { getAllTimeLogs, saveTimeLog, deleteTimeLog } from '../../services/shiftService.js';
+import { previewDeletePatternInRange, deletePatternInRange } from '../../services/patternService.js';
 import { formatDateSpanish, calculateWorkedHours, formatHoursToHHMM } from '../../utils/dateUtils.js';
+import { generatedGuardiasToRepair, repairGeneratedGuardias } from '../../services/guardiaService.js';
+import CustomPatternBuilder from './CustomPatternBuilder.jsx';
 import './CalendarView.css';
 
 /**
@@ -21,73 +24,19 @@ export default function CalendarView({ onCalendarUpdated }) {
   const [modalNotas, setModalNotas] = useState('');
   const [modalCompanero, setModalCompanero] = useState('');
 
-  // Estado para modal de generador de patrones
   const [showPatternModal, setShowPatternModal] = useState(false);
-  const [patternType, setPatternType] = useState('guardia24');
-  const [patternStartDate, setPatternStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [patternDurationMode, setPatternDurationMode] = useState('rango');
-  const [patternMonths, setPatternMonths] = useState(1);
-  const [patternEndDate, setPatternEndDate] = useState(new Date().toISOString().split('T')[0]);
-
-  // Opciones específicas para patrones L-V, Fin de semana alterno y Ausencias
-  const [lvShiftId, setLvShiftId] = useState('manana');
-  const [weekendDay, setWeekendDay] = useState('sabado');
-  const [ausenciaTypeId, setAusenciaTypeId] = useState('vacaciones');
-
-  // Horarios de entrada y salida editables para el generador masivo
-  const [patternStartTime, setPatternStartTime] = useState('08:00');
-  const [patternEndTime, setPatternEndTime] = useState('16:00');
+  const [repairMessage, setRepairMessage] = useState('');
 
   // Estado para modal de BORRADO de patrones por rango
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteStartDate, setDeleteStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [deleteEndDate, setDeleteEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [deleteOnlyAuto, setDeleteOnlyAuto] = useState(true);
-  const [previewInfo, setPreviewInfo] = useState(null);
+  const previewInfo = showDeleteModal && deleteStartDate && deleteEndDate
+    ? previewDeletePatternInRange(deleteStartDate, deleteEndDate, deleteOnlyAuto) : null;
 
   const logs = getAllTimeLogs();
-  const shiftTypes = getShiftTypes();
-
-  // Cambio de tipo de patrón -> Sugerir horarios iniciales solo al cambiar el select
-  const handlePatternCategoryChange = (e) => {
-    const pType = e.target.value;
-    setPatternType(pType);
-
-    if (pType === 'guardia24') {
-      const gShift = shiftTypes.find(s => s.id === 'guardia24');
-      setPatternStartTime(gShift ? gShift.horaInicio : '08:00');
-      setPatternEndTime(gShift ? gShift.horaFin : '08:00');
-    } else if (pType === 'lunes_viernes') {
-      const sObj = shiftTypes.find(s => s.id === lvShiftId);
-      setPatternStartTime(sObj ? sObj.horaInicio : '07:00');
-      setPatternEndTime(sObj ? sObj.horaFin : '15:00');
-    } else if (pType === 'fin_semana_alterno') {
-      const sabShift = shiftTypes.find(s => s.id === 'sabado_alterno');
-      setPatternStartTime(sabShift ? sabShift.horaInicio : '08:00');
-      setPatternEndTime(sabShift ? sabShift.horaFin : '16:00');
-    } else if (pType === 'ausencias') {
-      setPatternStartTime('00:00');
-      setPatternEndTime('00:00');
-    }
-  };
-
-  const handleLvShiftChange = (e) => {
-    const sId = e.target.value;
-    setLvShiftId(sId);
-    const sObj = shiftTypes.find(s => s.id === sId);
-    if (sObj) {
-      setPatternStartTime(sObj.horaInicio);
-      setPatternEndTime(sObj.horaFin);
-    }
-  };
-
-  // Actualizar vista previa de borrado
-  useEffect(() => {
-    if (showDeleteModal && deleteStartDate && deleteEndDate) {
-      const info = previewDeletePatternInRange(deleteStartDate, deleteEndDate, deleteOnlyAuto);
-      setPreviewInfo(info);
-    }
-  }, [showDeleteModal, deleteStartDate, deleteEndDate, deleteOnlyAuto, logs]);
+  const shiftTypes = getSelectableShiftTypes();
 
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
@@ -117,7 +66,7 @@ export default function CalendarView({ onCalendarUpdated }) {
     setSelectedDay(dayItem);
     const existingLog = logs.find(l => l.fecha === dayItem.dateIso);
     if (existingLog) {
-      setModalShiftId(existingLog.tipoTurnoId);
+      setModalShiftId(existingLog.tipoTurnoPersonalizadoId ?? existingLog.tipoTurnoId);
       setModalHoraEntrada(existingLog.horaEntradaReal || '08:00');
       setModalHoraSalida(existingLog.horaSalidaReal || '16:00');
       setModalNotas(existingLog.notas || '');
@@ -145,9 +94,9 @@ export default function CalendarView({ onCalendarUpdated }) {
     e.preventDefault();
     if (!selectedDay) return;
 
-    const horasCalc = calculateWorkedHours(modalHoraEntrada, modalHoraSalida);
+    const horasCalc = baseShiftId(modalShiftId, shiftTypes) === 'guardia24' && modalHoraEntrada === modalHoraSalida ? 24 : calculateWorkedHours(modalHoraEntrada, modalHoraSalida);
     const selectedShift = shiftTypes.find(s => s.id === modalShiftId);
-    const horasTeoricas = selectedShift ? selectedShift.horasTeoricas : 8;
+
 
     let notasFinales = modalNotas;
     if (modalCompanero.trim()) {
@@ -156,14 +105,17 @@ export default function CalendarView({ onCalendarUpdated }) {
 
     saveTimeLog({
       fecha: selectedDay.dateIso,
-      tipoTurnoId: modalShiftId,
+      ...shiftSelectionFields(modalShiftId, shiftTypes),
       horaEntradaReal: modalHoraEntrada,
       horaSalidaReal: modalHoraSalida,
       horasTrabajadas: horasCalc,
-      horasExtra: modalShiftId === 'jornada_adicional'
+      horasDescansoNoPagadas: selectedShift?.horasDescansoNoPagadas ?? 0,
+      esAusencia: selectedShift?.esAusencia === true,
+      registroEnVivo: undefined,
+      horasExtra: baseShiftId(modalShiftId, shiftTypes) === 'guardia24' ? 0 : baseShiftId(modalShiftId, shiftTypes) === 'jornada_adicional'
         ? Math.max(0, horasCalc - (selectedShift?.horasDescansoNoPagadas ?? 0))
-        : Math.max(0, horasCalc - horasTeoricas),
-      esFestivo: modalShiftId === 'festivo',
+        : Math.max(0, horasCalc - (selectedShift?.horasDescansoNoPagadas ?? 0) - 8),
+      esFestivo: selectedShift?.esFestivo === true,
       esPatronAuto: false,
       notas: notasFinales,
       companeroIntercambio: modalCompanero.trim()
@@ -177,34 +129,6 @@ export default function CalendarView({ onCalendarUpdated }) {
     if (!selectedDay) return;
     deleteTimeLog(selectedDay.dateIso);
     setSelectedDay(null);
-    if (onCalendarUpdated) onCalendarUpdated();
-  };
-
-  // Ejecutar generador de patrones (Turnos o Ausencias) con horarios personalizados respetados
-  const handleRunPatternGenerator = (e) => {
-    e.preventDefault();
-
-    const customEndDate = patternDurationMode === 'rango' ? patternEndDate : null;
-    const months = patternDurationMode === 'meses' ? Number(patternMonths) : null;
-
-    if (patternType === 'guardia24') {
-      generateGuardias24hPattern(patternStartDate, months, customEndDate, patternStartTime, patternEndTime);
-    } else if (patternType === 'lunes_viernes') {
-      generateLunesViernesPattern(patternStartDate, months, customEndDate, lvShiftId, patternStartTime, patternEndTime);
-    } else if (patternType === 'fin_semana_alterno') {
-      generateFinDeSemanaAlternoPattern(
-        patternStartDate,
-        months,
-        customEndDate,
-        weekendDay,
-        patternStartTime,
-        patternEndTime
-      );
-    } else if (patternType === 'ausencias') {
-      generateAusenciaPattern(patternStartDate, months, customEndDate, ausenciaTypeId);
-    }
-
-    setShowPatternModal(false);
     if (onCalendarUpdated) onCalendarUpdated();
   };
 
@@ -232,6 +156,16 @@ export default function CalendarView({ onCalendarUpdated }) {
 
   return (
     <div className="calendar-container">
+      {generatedGuardiasToRepair(logs).length > 0 && <div className="live-conflict guardia-repair">
+        <p>Hay {generatedGuardiasToRepair(logs).length} guardias generadas con horario o duración incorrectos. Puedes corregirlas a 24 h manteniendo su hora de entrada y poniendo la misma hora de salida al día siguiente. Los fichajes reales y las ediciones manuales se conservan.</p>
+        <details><summary>Ver fechas afectadas</summary><p>{generatedGuardiasToRepair(logs).map(log => formatDateSpanish(log.fecha)).join(' · ')}</p></details>
+        <button type="button" className="btn-secondary" onClick={() => {
+          if (!window.confirm('¿Corregir solo estas guardias antiguas a 24 horas, conservando su hora de entrada? Se conservará una copia del registro anterior.')) return;
+          try { const count = repairGeneratedGuardias(); setRepairMessage(`Corregidas ${count} guardias generadas. Fichajes reales conservados.`); onCalendarUpdated?.(); }
+          catch (error) { setRepairMessage(error.message); }
+        }}>Corregir guardias generadas</button>
+      </div>}
+      {repairMessage && <p role="status" className="live-hint">{repairMessage}</p>}
       <div className="calendar-header">
         <div className="calendar-title-box">
           <h2 className="calendar-month-title">
@@ -256,7 +190,7 @@ export default function CalendarView({ onCalendarUpdated }) {
         {daysGrid.map((dayItem, index) => {
           const logForDay = logs.find(l => l.fecha === dayItem.dateIso);
           const shiftObj = logForDay 
-            ? (shiftTypes.find(s => s.id === logForDay.tipoTurnoId) || { nombre: logForDay.tipoTurnoId, nombreCorto: logForDay.tipoTurnoId, color: '#805ad5' }) 
+            ? (getDisplayShiftType(logForDay, shiftTypes) || { nombre: logForDay.tipoTurnoId, nombreCorto: logForDay.tipoTurnoId, color: '#805ad5' })
             : null;
           const isToday = dayItem.dateIso === new Date().toISOString().split('T')[0];
 
@@ -275,7 +209,7 @@ export default function CalendarView({ onCalendarUpdated }) {
                   className="day-shift-badge" 
 
                 >
-                  <span className="shift-name-short">{logForDay.tipoTurnoId === 'guardia24' ? '24 h' : shiftObj.nombreCorto || shiftObj.nombre}</span>
+                  <span className="shift-name-short">{logForDay.tipoTurnoId === 'guardia24' && !shiftObj.esPersonalizado ? formatHoursToHHMM(logForDay.horasTrabajadas) : shiftObj.nombreCorto || shiftObj.nombre}</span>
                   {logForDay.horasTrabajadas > 0 && logForDay.tipoTurnoId !== 'guardia24' && (
                     <span className="shift-hours">{formatHoursToHHMM(logForDay.horasTrabajadas)}</span>
                   )}
@@ -292,9 +226,9 @@ export default function CalendarView({ onCalendarUpdated }) {
         })}
       </div>
 
-      <details className="disclosure-panel calendar-tools"><summary><span>Organizar turnos<small>Aplicar cadencias, ausencias o borrar un patrón</small></span></summary><div className="disclosure-body calendar-actions">
+      <details className="disclosure-panel calendar-tools"><summary><span>Organizar turnos<small>Crear tu ciclo, añadir ausencias o borrar una cadencia</small></span></summary><div className="disclosure-body calendar-actions">
           <button className="pattern-btn" onClick={() => setShowPatternModal(true)}>
-            ⚡ Generar Patrón / Ausencia
+            Crear cuadrante desde cero
           </button>
           <button className="pattern-btn delete-cadence-btn" onClick={() => setShowDeleteModal(true)}>
             🗑️ Borrar Cadencia
@@ -323,12 +257,13 @@ export default function CalendarView({ onCalendarUpdated }) {
               <button className="modal-close" onClick={() => setSelectedDay(null)}>✕</button>
             </div>
             
+            {baseShiftId(modalShiftId, shiftTypes) === 'guardia24' && <p className="live-hint">Con ambas horas iguales se guardan 24 h, con salida al día siguiente.</p>}
             <form onSubmit={handleSaveDayShift} className="modal-form">
               <div className="form-group">
                 <label>Tipo de Turno / Ausencia:</label>
                 <select value={modalShiftId} onChange={handleModalShiftTypeChange}>
                   {shiftTypes.map(st => (
-                    <option key={st.id} value={st.id}>{st.nombre} ({st.nombreCorto})</option>
+                    <option key={st.id} value={st.id}>{st.nombre}</option>
                   ))}
                 </select>
               </div>
@@ -388,153 +323,12 @@ export default function CalendarView({ onCalendarUpdated }) {
         </div>
       )}
 
-      {/* MODAL 2: Generador de Patrones / Ausencias */}
-      {showPatternModal && (
-        <div className="modal-backdrop" onClick={() => setShowPatternModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>⚡ Generar Patrón Rotativo / Ausencia</h3>
-              <button className="modal-close" onClick={() => setShowPatternModal(false)}>✕</button>
-            </div>
-
-            <form onSubmit={handleRunPatternGenerator} className="modal-form">
-              <div className="form-group">
-                <label>Categoría de Patrón:</label>
-                <select value={patternType} onChange={handlePatternCategoryChange}>
-                  <option value="guardia24">Guardia 24h + 3 Días de Descanso (Rotativo 24/72)</option>
-                  <option value="lunes_viernes">Turno Lunes a Viernes Fijo (Mañana / Tarde / Noche)</option>
-                  <option value="fin_semana_alterno">Fin de Semana Alterno (Horario Personalizado)</option>
-                  <option value="ausencias">🌴 Periodo de Ausencia (Vacaciones, Bajas, Moscosos)</option>
-                </select>
-              </div>
-
-              {/* Si es Ausencia */}
-              {patternType === 'ausencias' && (
-                <div className="form-group">
-                  <label>Selecciona el tipo de ausencia:</label>
-                  <select value={ausenciaTypeId} onChange={e => setAusenciaTypeId(e.target.value)}>
-                    <option value="vacaciones">🌴 Vacaciones (Vac.)</option>
-                    <option value="baja_laboral">🏥 Baja Laboral / Médica (B. Méd)</option>
-                    <option value="paternidad_maternidad">👶 Baja Paternidad / Maternidad (B. Pat)</option>
-                    <option value="asuntos_propios">💼 Asuntos Propios / Moscoso (A.P.)</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Si es Turno Lunes a Viernes */}
-              {patternType === 'lunes_viernes' && (
-                <div className="form-group">
-                  <label>Selecciona el turno de Lunes a Viernes:</label>
-                  <select value={lvShiftId} onChange={handleLvShiftChange}>
-                    <option value="manana">Mañana (M)</option>
-                    <option value="tarde">Tarde (T)</option>
-                    <option value="noche">Noche (N)</option>
-                    <option value="turno12">Turno 12h (12h)</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Si es Fin de Semana Alterno */}
-              {patternType === 'fin_semana_alterno' && (
-                <div className="form-group">
-                  <label>Elegir día de fin de semana alterno:</label>
-                  <select value={weekendDay} onChange={e => setWeekendDay(e.target.value)}>
-                    <option value="sabado">Sábado Alterno (S. Alt)</option>
-                    <option value="domingo">Domingo Alterno (Fest.)</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Campos Editables de Hora Entrada / Salida (solo si NO es ausencia) */}
-              {patternType !== 'ausencias' && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Hora Entrada para el patrón:</label>
-                    <input 
-                      type="time" 
-                      value={patternStartTime} 
-                      onChange={e => setPatternStartTime(e.target.value)} 
-                      required 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Hora Salida para el patrón:</label>
-                    <input 
-                      type="time" 
-                      value={patternEndTime} 
-                      onChange={e => setPatternEndTime(e.target.value)} 
-                      required 
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Selector de Modo de Duración */}
-              <div className="form-group">
-                <label>Modo de Proyección:</label>
-                <div className="toggle-mode-group">
-                  <button 
-                    type="button" 
-                    className={`toggle-mode-btn ${patternDurationMode === 'rango' ? 'active' : ''}`}
-                    onClick={() => setPatternDurationMode('rango')}
-                  >
-                    📆 Rango Personalizado
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`toggle-mode-btn ${patternDurationMode === 'meses' ? 'active' : ''}`}
-                    onClick={() => setPatternDurationMode('meses')}
-                  >
-                    📅 Bloque por Meses
-                  </button>
-                </div>
-              </div>
-
-              {/* Fecha Inicio */}
-              <div className="form-group">
-                <label>Fecha Inicio:</label>
-                <input 
-                  type="date" 
-                  value={patternStartDate}
-                  onChange={e => setPatternStartDate(e.target.value)}
-                  required
-                />
-              </div>
-
-              {patternDurationMode === 'meses' ? (
-                <div className="form-group">
-                  <label>Proyectar a cuántos meses vista:</label>
-                  <select value={patternMonths} onChange={e => setPatternMonths(e.target.value)}>
-                    <option value={1}>1 Mes</option>
-                    <option value={3}>3 Meses</option>
-                    <option value={6}>6 Meses (Recomendado)</option>
-                    <option value={12}>1 Año Completo</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="form-group">
-                  <label>Fecha Fin del Patrón / Ausencia:</label>
-                  <input 
-                    type="date" 
-                    value={patternEndDate}
-                    onChange={e => setPatternEndDate(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowPatternModal(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  🚀 Generar Cuadrante / Ausencia
-                </button>
-              </div>
-            </form>
-          </div>
+      {showPatternModal && <div className="modal-backdrop" onClick={() => setShowPatternModal(false)}>
+        <div className="modal-content custom-pattern-modal" onClick={event => event.stopPropagation()}>
+          <div className="modal-header"><h3>Crear mi cuadrante desde cero</h3><button type="button" className="modal-close" aria-label="Cerrar creador de cuadrante" onClick={() => setShowPatternModal(false)}>✕</button></div>
+          <CustomPatternBuilder onApplied={onCalendarUpdated} onClose={() => setShowPatternModal(false)} />
         </div>
-      )}
+      </div>}
 
       {/* MODAL 3: Borrar Cadencia por Rango */}
       {showDeleteModal && (

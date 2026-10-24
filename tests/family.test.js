@@ -6,14 +6,15 @@ let values;
 const options = { patternId: 'dia-noche-11', anchor: '2026-11-26', start: '2026-11-26', end: '2026-12-07' };
 beforeEach(() => {
   values = new Map([['tes_nomina_time_logs', '[{"fecha":"2026-11-26","tipoTurnoId":"manana"}]']]);
+  values.set('tes_nomina_family_calendar', JSON.stringify({ ownName: 'Antonio', partnerName: 'Ana', shifts: [], patterns: [{ id: 'dia-noche-11', name: 'Cadencia antigua conservada', steps: ['dia', 'noche', 'libre', 'libre', 'libre', 'dia', 'noche', 'libre', 'libre', 'libre', 'libre'].map(familyStep) }] }));
   globalThis.localStorage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
 });
 
-test('prepara el ciclo de 11 días sin rellenar ninguna fecha automáticamente', () => {
+test('un calendario familiar nuevo empieza sin cadencias predefinidas ni fechas rellenadas', () => {
+  values.delete('tes_nomina_family_calendar');
   const data = getFamilyData();
   assert.equal(data.shifts.length, 0);
-  assert.equal(data.patterns[0].steps.length, 11);
-  assert.deepEqual(data.patterns[0].steps.map(step => step.tipo), ['dia', 'noche', 'libre', 'libre', 'libre', 'dia', 'noche', 'libre', 'libre', 'libre', 'libre']);
+  assert.deepEqual(data.patterns, []);
   assert.equal(values.has('tes_nomina_family_calendar'), false);
 });
 

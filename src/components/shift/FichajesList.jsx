@@ -1,15 +1,18 @@
+import { getSelectableShiftTypes, getDisplayShiftType } from '../../services/customShiftService.js';
 import React, { useState } from 'react';
 import { formatDateSpanish, formatHoursToHHMM } from '../../utils/dateUtils.js';
-import { getShiftTypes, deleteTimeLog } from '../../services/shiftService.js';
+import { deleteTimeLog } from '../../services/shiftService.js';
 import './FichajesList.css';
 import FichajeEditor from './FichajeEditor.jsx';
-import { deleteRealTimeRecord } from '../../services/realTimeService.js';
+import { recordNextDayLabel } from '../../utils/recordTimeUtils.js';
+import { deleteRealTimeRecord, getRealTimeRecords } from '../../services/realTimeService.js';
 
 /**
  * FichajesList.jsx - Listado de turnos fichados en el período seleccionado con formato visual 'Xh Ymin'.
  */
 export default function FichajesList({ logs, onDeleteLog, onLogUpdated, onEditRealRecord }) {
-  const shiftTypes = getShiftTypes();
+  const shiftTypes = getSelectableShiftTypes();
+  const realRecords = getRealTimeRecords();
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -34,7 +37,8 @@ export default function FichajesList({ logs, onDeleteLog, onLogUpdated, onEditRe
       {message && <p className="log-save-message" role="status">{message}</p>}
       <div className="logs-grid">
         {logs.map(log => {
-          const shiftObj = shiftTypes.find(s => s.id === log.tipoTurnoId);
+          const informative = realRecords.find(record => record.fecha === log.fecha && !record.contarEnNomina);
+          const shiftObj = getDisplayShiftType(log, shiftTypes);
           const badgeColor = shiftObj ? shiftObj.color : '#64748b';
           const shiftName = shiftObj ? shiftObj.nombre : log.tipoTurnoId;
 
@@ -61,7 +65,7 @@ export default function FichajesList({ logs, onDeleteLog, onLogUpdated, onEditRe
 
               <div className="log-card-body">
                 <div className="log-hours">
-                  <span>⏱️ {log.horaEntradaReal || '08:00'} - {log.horaSalidaReal || '16:00'}</span>
+                  <span>⏱️ {log.horaEntradaReal || '08:00'} - {log.horaSalidaReal || '16:00'}{log.registroReal ? recordNextDayLabel(log) : (log.horaSalidaReal < log.horaEntradaReal || (log.tipoTurnoId === 'guardia24' && log.horaSalidaReal === log.horaEntradaReal)) ? ' (+1 día)' : ''}</span>
                   <strong>{formatHoursToHHMM(log.horasTrabajadas)} totales</strong>
                 </div>
 
@@ -82,6 +86,12 @@ export default function FichajesList({ logs, onDeleteLog, onLogUpdated, onEditRe
                 )}
               </div>
 
+              {informative && <div className="log-real-comparison">
+                <p><strong>Fichaje real · solo informativo</strong></p>
+                <p>{informative.horaEntradaReal} – {informative.horaSalidaReal}{recordNextDayLabel(informative)} · {formatHoursToHHMM(informative.horasTrabajadas)}</p>
+                <p>La nómina conserva el turno del cuadrante mostrado arriba.</p>
+                <button type="button" className="btn-secondary" onClick={() => onEditRealRecord?.(log.fecha)}>Revisar horas reales y nómina</button>
+              </div>}
               <div className="log-actions">
               <button type="button" aria-label={`Editar fichaje del ${formatDateSpanish(log.fecha)}`}
                 onClick={() => { setMessage(''); if (log.registroReal) onEditRealRecord?.(log.fecha); else setEditingId(log.id || log.fecha); }}>Editar</button>

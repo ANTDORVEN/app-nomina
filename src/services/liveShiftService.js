@@ -11,7 +11,9 @@ export function changeLiveShift(previous, action, now = Date.now()) {
     throw new Error('El turno ha cambiado en otra ventana. Revisa su estado y vuelve a intentarlo.');
   }
   let next;
-  if (action === 'start' && !current) {
+  if (action === 'discard' && current?.endedAt) {
+    next = null;
+  } else if (action === 'start' && !current) {
     next = { id: `live_${now}`, startedAt: now, pauses: [], endedAt: null };
   } else if (current && !current.endedAt && now >= current.startedAt) {
     const pauses = current.pauses.map(pause => ({ ...pause }));
@@ -57,9 +59,10 @@ export function liveShiftLog(session, type, deductPause, festive, notes) {
   const unpaid = deductPause ? hours(duration.pause) : 0;
   return {
     id: session.id, fecha: formatDateToISO(new Date(session.startedAt)),
-    tipoTurnoId: type.id, horaEntradaReal: time(session.startedAt), horaSalidaReal: time(session.endedAt),
+    fechaSalidaReal: formatDateToISO(new Date(session.endedAt)),
+    tipoTurnoId: type.tipoBase ?? type.id, ...(type.esPersonalizado ? { tipoTurnoPersonalizadoId: type.id } : {}), horaEntradaReal: time(session.startedAt), horaSalidaReal: time(session.endedAt),
     horasTrabajadas: worked, horasDescansoNoPagadas: unpaid,
-    horasExtra: type.id === 'guardia24' ? 0 : type.id === 'jornada_adicional' ? Math.max(0, worked - unpaid) : Math.max(0, worked - unpaid - 8),
+    horasExtra: (type.tipoBase ?? type.id) === 'guardia24' ? 0 : (type.tipoBase ?? type.id) === 'jornada_adicional' ? Math.max(0, worked - unpaid) : Math.max(0, worked - unpaid - 8),
     esFestivo: festive || type.esFestivo === true, esAusencia: false, esPatronAuto: false,
     notas: notes, registroEnVivo: session, createdAt: new Date().toISOString()
   };

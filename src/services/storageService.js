@@ -14,7 +14,9 @@ const STORAGE_KEYS = {
   TIME_LOGS: 'tes_nomina_time_logs',
   INCIDENTS: 'tes_nomina_incidents',
   REAL_TIME_RECORDS: 'tes_nomina_real_time_records',
-  FAMILY_CALENDAR: 'tes_nomina_family_calendar'
+  FAMILY_CALENDAR: 'tes_nomina_family_calendar',
+  CUSTOM_PATTERNS: 'tes_nomina_custom_patterns',
+  CUSTOM_SHIFT_TYPES: 'tes_nomina_custom_shift_types'
 };
 
 /**
